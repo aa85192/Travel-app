@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Nunito", sans-serif;
+  --font-body: "Noto Sans TC", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  /* ═══ 核心奶茶色系 ═══ */
+  --color-milk-tea-50: #FBF7F2;
+  --color-milk-tea-100: #F6EDE3;
+  --color-milk-tea-200: #ECDAC7;
+  --color-milk-tea-300: #E5CEB5;
+  --color-milk-tea-400: #D2A97D;
+  --color-milk-tea-500: #BF8445;
+  --color-milk-tea-600: #A67B5B;
+  --color-milk-tea-700: #8A624A;
+  --color-milk-tea-800: #6E4E3B;
+  --color-milk-tea-900: #4A332A;
+
+  /* ═══ 輔助功能色 ═══ */
+  --color-accent-coral: #E5A672;
+  --color-accent-pink: #D49D8F;
+  --color-accent-cream: #F2D1B0;
+  --color-accent-sage: #A8B5A0;
+  --color-accent-sky: #9DB8C7;
+  --color-accent-warning: #E8C07A;
+  --color-accent-error: #C47B6B;
+
+  /* ═══ 中性色 ═══ */
+  --color-neutral-white: #FFFDF9;
+  --color-neutral-gray-1: #F5F0EB;
+  --color-neutral-gray-2: #D4CCC4;
+  --color-neutral-gray-3: #9E958C;
+  --color-neutral-dark: #3D352F;
+
+  /* ═══ 交通工具色碼 ═══ */
+  --color-transport-walk: #A8B5A0;
+  --color-transport-bus: #9DB8C7;
+  --color-transport-subway: #B8A0B5;
+  --color-transport-taxi: #E8C07A;
+  --color-transport-uber: #3D352F;
+
+  --radius-photo: 14px;
+}
+
+@layer base {
+  body {
+    @apply bg-milk-tea-50 text-neutral-dark font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-milk-tea-900;
+  }
+}
+
+@layer utilities {
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(191, 132, 69, 0.15);
+  }
+}

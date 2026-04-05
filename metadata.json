@@ -1,0 +1,7 @@
+{
+  "name": "奶茶旅伴 MilkTea Travel",
+  "description": "簡約可愛的奶茶色系旅遊規劃與分帳工具，支援 Naver Maps 導航與即時匯率換算。",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
