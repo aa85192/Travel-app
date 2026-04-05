@@ -112,8 +112,12 @@ export const useTripStore = create<TripState>()(
             ...day,
             dayNumber: index + 1,
           }));
-        
-        return { trip: { ...state.trip, days: newDays } };
+
+        const newEndDate = newDays.length > 0
+          ? newDays[newDays.length - 1].date
+          : state.trip.startDate;
+
+        return { trip: { ...state.trip, days: newDays, endDate: newEndDate } };
       }),
 
       reorderDays: (fromIndex, toIndex) => set((state) => {

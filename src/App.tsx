@@ -45,7 +45,7 @@ export default function App() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <Budget trip={trip} onUpdateTrip={() => {}} onBack={() => setActiveTab('home')} />
+            <Budget trip={trip} onUpdateTrip={setTrip} onBack={() => setActiveTab('home')} />
           </motion.div>
         )}
         {(activeTab === 'map' || activeTab === 'settings') && (

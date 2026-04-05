@@ -8,6 +8,7 @@ import { fetchExchangeRates } from '../services/exchangeRateService';
 interface BudgetProps {
   trip: Trip;
   onUpdateTrip: (trip: Trip) => void;
+  onBack?: () => void;
 }
 
 const EMOJIS = ['🐱', '🐰', '🐻', '🦊', '🐶', '🐼', '🐨', '🦁', '🐯', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺'];
@@ -209,7 +210,7 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                       <span className="font-bold">{from?.name}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-xs text-milk-tea-400 font-mono">₩ {s.amount.toLocaleString()}</span>
+                      <span className="text-xs text-milk-tea-400 font-mono">{s.amount.toLocaleString()}</span>
                       <ArrowRight className="w-5 h-5 text-milk-tea-300" />
                     </div>
                     <div className="flex items-center space-x-2">

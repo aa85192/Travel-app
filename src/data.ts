@@ -56,7 +56,7 @@ export const SAMPLE_TRIP: Trip = {
           tags: ["#宮殿", "#韓服", "#歷史"],
           openingHours: "09:00-18:00",
           rating: 4.6,
-          order: 1
+          order: 0
         },
         {
           id: "spot_2",
@@ -74,7 +74,7 @@ export const SAMPLE_TRIP: Trip = {
           tags: ["#韓屋", "#拍照", "#散步"],
           openingHours: "全天開放",
           rating: 4.3,
-          order: 2
+          order: 1
         },
         {
           id: "spot_3",
@@ -92,7 +92,7 @@ export const SAMPLE_TRIP: Trip = {
           tags: ["#咖啡廳", "#甜點", "#特色"],
           openingHours: "11:00-21:00",
           rating: 4.5,
-          order: 3
+          order: 2
         }
       ],
       transits: [
@@ -142,6 +142,162 @@ export const SAMPLE_TRIP: Trip = {
           }
         }
       ]
+    },
+    {
+      dayNumber: 2,
+      date: "2026-05-02",
+      title: "弘大 & 明洞 🛍️",
+      spots: [
+        {
+          id: "spot_4",
+          name: "弘大街頭",
+          nameLocal: "홍대거리",
+          address: "首爾特別市麻浦區臥牛山路 일대",
+          photo: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?auto=format&fit=crop&q=80&w=400",
+          category: "shopping",
+          lat: 37.5563,
+          lng: 126.9236,
+          duration: 120,
+          cost: 0,
+          currency: "KRW",
+          notes: "週末有街頭表演，夜晚氣氛最好！",
+          tags: ["#弘大", "#街頭藝術", "#購物"],
+          openingHours: "全天開放",
+          rating: 4.4,
+          order: 0
+        },
+        {
+          id: "spot_5",
+          name: "明洞商圈",
+          nameLocal: "명동",
+          address: "首爾特別市中區明洞 일대",
+          photo: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&q=80&w=400",
+          category: "shopping",
+          lat: 37.5636,
+          lng: 126.9869,
+          duration: 150,
+          cost: 0,
+          currency: "KRW",
+          notes: "韓國美妝聖地，路邊小吃必試雞蛋糕！",
+          tags: ["#明洞", "#美妝", "#小吃"],
+          openingHours: "10:00-22:00",
+          rating: 4.2,
+          order: 1
+        }
+      ],
+      transits: [
+        {
+          id: "transit_4_5",
+          fromSpotId: "spot_4",
+          toSpotId: "spot_5",
+          selectedMode: "subway",
+          estimates: {
+            "subway": {
+              "duration": 20,
+              "distance": 5200,
+              "cost": 1400,
+              "description": "弘大入口站 → 明洞站"
+            },
+            "taxi": {
+              "duration": 18,
+              "distance": 5000,
+              "cost": 10000,
+              "description": "約 18 分鐘車程"
+            }
+          }
+        }
+      ]
+    },
+    {
+      dayNumber: 3,
+      date: "2026-05-03",
+      title: "漢江 & 樂天世界 🎡",
+      spots: [
+        {
+          id: "spot_6",
+          name: "漢江公園 汝矣島",
+          nameLocal: "여의도 한강공원",
+          address: "首爾特別市永登浦區汝矣公園路 68",
+          photo: "https://images.unsplash.com/photo-1617541086271-4d43983704bd?auto=format&fit=crop&q=80&w=400",
+          category: "attraction",
+          lat: 37.5286,
+          lng: 126.9326,
+          duration: 90,
+          cost: 0,
+          currency: "KRW",
+          notes: "五月有漢江煙火節，傍晚景色超美！",
+          tags: ["#漢江", "#野餐", "#夜景"],
+          openingHours: "全天開放",
+          rating: 4.5,
+          order: 0
+        },
+        {
+          id: "spot_7",
+          name: "樂天世界",
+          nameLocal: "롯데월드",
+          address: "首爾特別市松坡區奧林匹克路 240",
+          photo: "https://images.unsplash.com/photo-1577086664693-894d8405334a?auto=format&fit=crop&q=80&w=400",
+          category: "activity",
+          lat: 37.5113,
+          lng: 127.0982,
+          duration: 240,
+          cost: 62000,
+          currency: "KRW",
+          notes: "室內外結合樂園，下雨天也能玩！",
+          tags: ["#樂天世界", "#遊樂園", "#室內"],
+          openingHours: "10:30-21:00",
+          rating: 4.3,
+          order: 1
+        }
+      ],
+      transits: [
+        {
+          id: "transit_6_7",
+          fromSpotId: "spot_6",
+          toSpotId: "spot_7",
+          selectedMode: "subway",
+          estimates: {
+            "subway": {
+              "duration": 35,
+              "distance": 11000,
+              "cost": 1500,
+              "description": "汝矣渡口站 → 蠶室站"
+            },
+            "taxi": {
+              "duration": 30,
+              "distance": 10500,
+              "cost": 18000,
+              "description": "約 30 分鐘車程"
+            }
+          }
+        }
+      ]
+    },
+    {
+      dayNumber: 4,
+      date: "2026-05-04",
+      title: "仁寺洞 & 返程 ✈️",
+      spots: [
+        {
+          id: "spot_8",
+          name: "仁寺洞",
+          nameLocal: "인사동",
+          address: "首爾特別市鍾路區仁寺洞街",
+          photo: "https://images.unsplash.com/photo-1583394293214-cca9f2b9f4e4?auto=format&fit=crop&q=80&w=400",
+          category: "shopping",
+          lat: 37.5741,
+          lng: 126.9852,
+          duration: 90,
+          cost: 0,
+          currency: "KRW",
+          notes: "傳統工藝品與藝廊聚集地，適合帶伴手禮",
+          tags: ["#仁寺洞", "#傳統", "#伴手禮"],
+          openingHours: "10:00-21:00",
+          rating: 4.1,
+          order: 0
+        }
+      ],
+      transits: []
     }
   ]
 };
