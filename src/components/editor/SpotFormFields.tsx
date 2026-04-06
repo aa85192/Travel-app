@@ -296,9 +296,9 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
         <div>
           <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1 flex items-center justify-between">
             <span>地址</span>
-            <button 
+            <button
               type="button"
-              onClick={handleSearchOnNaver}
+              onClick={() => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(formData.name || '')}`, '_blank')}
               className="text-[10px] text-milk-tea-400 hover:text-milk-tea-600 flex items-center"
             >
               <ExternalLink size={10} className="mr-1" /> 在 Naver Map 搜尋
