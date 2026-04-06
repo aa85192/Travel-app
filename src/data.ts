@@ -8,9 +8,9 @@ export const SAMPLE_TRIP: Trip = {
   startDate: "2026-05-01",
   endDate: "2026-05-04",
   participants: [
-    { id: 'p1', name: '我', emoji: '🐱', color: '#BF8445' },
-    { id: 'p2', name: '小美', emoji: '🐰', color: '#D49D8F' },
-    { id: 'p3', name: '阿強', emoji: '🐻', color: '#A67B5B' },
+    { id: 'p1', name: '我', emoji: '🐱', color: '#F76DAA' },
+    { id: 'p2', name: '小美', emoji: '🐰', color: '#E8A0C8' },
+    { id: 'p3', name: '阿強', emoji: '🐻', color: '#E055A0' },
   ],
   expenses: [
     {
