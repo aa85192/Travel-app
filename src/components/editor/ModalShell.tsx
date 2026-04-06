@@ -40,7 +40,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pb-16 sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
