@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X } from 'lucide-react';
+import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X, Sparkles } from 'lucide-react';
 import { Spot, SpotCategory } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
 import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
+import { fetchWikipediaPhoto } from '../../services/wikipediaPhotoService';
 import { useUIStore } from '../../stores/uiStore';
 import { fetchExchangeRates } from '../../services/exchangeRateService';
 
@@ -20,6 +21,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isFetchingPhoto, setIsFetchingPhoto] = useState(false);
   const [inputMode, setInputMode] = useState<'search' | 'naver'>('search');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const addToast = useUIStore((state) => state.addToast);
@@ -86,17 +88,58 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     }
   };
 
-  const handleSelectPlace = (place: PlaceResult) => {
-    setFormData({
+  const handleSelectPlace = async (place: PlaceResult) => {
+    const newData = {
       ...formData,
       name: place.name,
       address: place.address,
       lat: place.lat,
       lng: place.lng,
-    });
+    };
+    setFormData(newData);
     setSearchResults([]);
     setSearchQuery('');
-    addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
+
+    // 自動從 Wikipedia 抓代表照片
+    setIsFetchingPhoto(true);
+    try {
+      const photoUrl = await fetchWikipediaPhoto(
+        place.nameLocal || place.name,
+        place.name
+      );
+      if (photoUrl) {
+        setFormData({ ...newData, photo: photoUrl });
+        addToast(`✅ 已選擇「${place.name}」並自動取得照片`, 'success');
+      } else {
+        addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
+      }
+    } catch {
+      addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
+    } finally {
+      setIsFetchingPhoto(false);
+    }
+  };
+
+  const handleFetchPhoto = async () => {
+    const query = formData.nameLocal || formData.name;
+    if (!query) {
+      addToast('請先輸入景點名稱', 'warning');
+      return;
+    }
+    setIsFetchingPhoto(true);
+    try {
+      const photoUrl = await fetchWikipediaPhoto(query, formData.name);
+      if (photoUrl) {
+        setFormData({ ...formData, photo: photoUrl });
+        addToast('✅ 已自動取得照片', 'success');
+      } else {
+        addToast('找不到相關照片，請手動貼上圖片網址', 'error');
+      }
+    } catch {
+      addToast('照片取得失敗', 'error');
+    } finally {
+      setIsFetchingPhoto(false);
+    }
   };
 
   const handleSearchOnNaver = () => {
@@ -347,8 +390,19 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
       {/* Media & Time */}
       <div className="grid grid-cols-1 gap-4">
         <div>
-          <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1">
-            照片 URL
+          <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1 flex items-center justify-between">
+            <span>照片 URL</span>
+            <button
+              type="button"
+              onClick={handleFetchPhoto}
+              disabled={isFetchingPhoto}
+              className="flex items-center space-x-1 text-[10px] text-milk-tea-400 hover:text-milk-tea-600 disabled:opacity-50 transition-colors"
+            >
+              {isFetchingPhoto
+                ? <Loader2 size={10} className="animate-spin" />
+                : <Sparkles size={10} />}
+              <span>{isFetchingPhoto ? '搜尋中...' : '自動抓取'}</span>
+            </button>
           </label>
           <div className="flex space-x-3">
             <div className="flex-1 relative">
@@ -358,22 +412,26 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                 value={formData.photo || ''}
                 onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
-                placeholder="https://..."
+                placeholder="https://... 或點選「自動抓取」"
               />
             </div>
-            {formData.photo && (
+            {isFetchingPhoto ? (
+              <div className="w-12 h-12 rounded-xl border border-milk-tea-200 flex-shrink-0 bg-milk-tea-50 flex items-center justify-center">
+                <Loader2 size={16} className="animate-spin text-milk-tea-300" />
+              </div>
+            ) : formData.photo ? (
               <div className="w-12 h-12 rounded-xl overflow-hidden border border-milk-tea-200 flex-shrink-0 bg-milk-tea-50">
-                <img 
-                  src={formData.photo} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover" 
+                <img
+                  src={formData.photo}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/100/100';
                   }}
                   referrerPolicy="no-referrer"
                 />
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
