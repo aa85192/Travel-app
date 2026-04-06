@@ -26,6 +26,7 @@ export const TransitCard: React.FC<TransitCardProps> = ({
   destinationName,
   destinationCoords,
 }) => {
+  if (!transit) return null;
   const estimate = transit.estimates[transit.selectedMode];
   const modes: TransportMode[] = ['walking', 'bus', 'subway', 'taxi'];
 

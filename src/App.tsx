@@ -38,7 +38,7 @@ export default function App() {
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.3 }}
           >
-            <Home trip={trip} onUpdateTrip={setTrip} />
+            <Home trip={trip} onUpdateTrip={setTrip} onNavigate={setActiveTab} />
           </motion.div>
         )}
         {activeTab === 'itinerary' && (

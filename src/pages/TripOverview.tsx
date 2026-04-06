@@ -120,8 +120,12 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
           currentDay={currentDay} 
           onSelectDay={setCurrentDay} 
         />
-        <button 
-          onClick={addDay}
+        <button
+          onClick={() => {
+            const newDayNumber = trip.days.length + 1;
+            addDay();
+            setCurrentDay(newDayNumber);
+          }}
           className="flex-shrink-0 w-10 h-10 rounded-full border-2 border-dashed border-milk-tea-300 flex items-center justify-center text-milk-tea-400 hover:border-milk-tea-500 hover:text-milk-tea-600 transition-all"
         >
           <Plus size={20} />
