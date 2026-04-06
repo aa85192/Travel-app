@@ -40,7 +40,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pt-14 pb-16 sm:p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pb-16 sm:p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -56,7 +56,7 @@ export const ModalShell: React.FC<ModalShellProps> = ({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-lg bg-milk-tea-50 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-full sm:max-h-[90vh]"
+            className="relative w-full max-w-lg bg-milk-tea-50 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100dvh-4rem)] sm:max-h-[90vh]"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-milk-tea-200 bg-white/50 backdrop-blur-md sticky top-0 z-10">
