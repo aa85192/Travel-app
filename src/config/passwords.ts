@@ -9,7 +9,5 @@
  * ⚠️ 注意：此檔案在 GitHub 公開可見，請勿直接存放明文密碼
  */
 export const VALID_HASHES: readonly string[] = [
-  // 等待用戶提供密碼後在此新增
-  // 格式示意：
-  // "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", // 密碼: 123
+  "c47d6edb98152fe87bdd671364e75a8cd6d911e6b7428fa656ab834a6d3ad411", // Cindy
 ];
