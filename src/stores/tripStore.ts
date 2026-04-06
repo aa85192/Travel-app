@@ -3,6 +3,16 @@ import { persist } from 'zustand/middleware';
 import { Trip, Spot, DayPlan, Transit } from '../types';
 import { SAMPLE_TRIP } from '../data';
 import { recalculateDayTransits } from '../utils/recalculateTransits';
+import { getAuthHash } from '../components/PasswordGate';
+
+/**
+ * 依登入的密碼雜湊值產生儲存 key，確保不同密碼的使用者資料完全隔離。
+ * 未登入時使用 'default'（實際上 App.tsx 會先攔截，不應到達此處）。
+ */
+function getTripStorageKey(): string {
+  const hash = getAuthHash();
+  return hash ? `milktea-travel-${hash.slice(0, 16)}` : 'milktea-travel-default';
+}
 
 interface TripState {
   trip: Trip;
@@ -269,7 +279,7 @@ export const useTripStore = create<TripState>()(
       }),
     }),
     {
-      name: 'milktea-travel-storage',
+      name: getTripStorageKey(),
     }
   )
 );
