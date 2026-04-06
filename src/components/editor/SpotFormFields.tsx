@@ -99,6 +99,17 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
   };
 
+  const handleSearchOnNaver = () => {
+    const query = (formData.name || formData.address || '').trim();
+    if (!query) {
+      addToast('請先輸入景點名稱或地址', 'warning');
+      return;
+    }
+
+    const url = `https://map.naver.com/v5/search/${encodeURIComponent(query)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       {/* 地點輸入方式切換 */}
