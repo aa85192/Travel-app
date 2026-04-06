@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Tag, Info, Search, Loader2, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X } from 'lucide-react';
 import { Spot, SpotCategory } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
+import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
 import { useUIStore } from '../../stores/uiStore';
 import { fetchExchangeRates } from '../../services/exchangeRateService';
 
@@ -16,6 +17,11 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
   const [naverUrl, setNaverUrl] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [rates, setRates] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [inputMode, setInputMode] = useState<'search' | 'naver'>('search');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const addToast = useUIStore((state) => state.addToast);
 
   useEffect(() => {
@@ -63,40 +69,163 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     }
   };
 
-  const handleSearchOnNaver = () => {
-    if (!formData.name) {
-      addToast('請先輸入景點名稱', 'error');
-      return;
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsSearching(true);
+    setSearchResults([]);
+    try {
+      const results = await searchPlaces(searchQuery);
+      if (results.length === 0) {
+        addToast('找不到相關地點，試試韓文或英文名稱', 'error');
+      }
+      setSearchResults(results);
+    } catch {
+      addToast('搜尋失敗，請稍後再試', 'error');
+    } finally {
+      setIsSearching(false);
     }
-    const searchUrl = `https://map.naver.com/v5/search/${encodeURIComponent(formData.name)}`;
-    window.open(searchUrl, '_blank');
+  };
+
+  const handleSelectPlace = (place: PlaceResult) => {
+    setFormData({
+      ...formData,
+      name: place.name,
+      address: place.address,
+      lat: place.lat,
+      lng: place.lng,
+    });
+    setSearchResults([]);
+    setSearchQuery('');
+    addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
   };
 
   return (
     <div className="space-y-6">
-      {/* Naver Link Importer */}
-      <div className="p-4 bg-white border border-milk-tea-200 rounded-2xl shadow-sm">
-        <label className="flex items-center text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-2">
-          <Globe size={14} className="mr-1.5" />
-          從 Naver Map 連結匯入
-        </label>
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            value={naverUrl}
-            onChange={(e) => setNaverUrl(e.target.value)}
-            placeholder="貼上 Naver Map 連結 (naver.me/...)"
-            className="flex-1 px-4 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
-          />
+      {/* 地點輸入方式切換 */}
+      <div className="p-4 bg-white border border-milk-tea-200 rounded-2xl shadow-sm space-y-3">
+        <div className="flex rounded-xl overflow-hidden border border-milk-tea-200">
           <button
             type="button"
-            onClick={handleParseNaver}
-            disabled={isParsing || !naverUrl}
-            className="px-4 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold hover:bg-milk-tea-600 disabled:opacity-50 transition-all flex items-center"
+            onClick={() => setInputMode('search')}
+            className={`flex-1 py-2 text-xs font-bold transition-all ${
+              inputMode === 'search'
+                ? 'bg-milk-tea-500 text-white'
+                : 'bg-white text-milk-tea-400 hover:bg-milk-tea-50'
+            }`}
           >
-            {isParsing ? <Loader2 size={16} className="animate-spin" /> : '解析'}
+            🔍 搜尋地點
+          </button>
+          <button
+            type="button"
+            onClick={() => setInputMode('naver')}
+            className={`flex-1 py-2 text-xs font-bold transition-all ${
+              inputMode === 'naver'
+                ? 'bg-milk-tea-500 text-white'
+                : 'bg-white text-milk-tea-400 hover:bg-milk-tea-50'
+            }`}
+          >
+            🗺️ 貼上 Naver 連結
           </button>
         </div>
+
+        {inputMode === 'search' && (
+          <div className="space-y-2">
+            <div className="flex space-x-2">
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                placeholder="輸入地點名稱（中文、韓文、英文皆可）"
+                className="flex-1 px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleSearch}
+                disabled={isSearching || !searchQuery.trim()}
+                className="px-4 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
+              >
+                {isSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+              </button>
+            </div>
+
+            {searchResults.length > 0 && (
+              <div className="rounded-xl border border-milk-tea-200 overflow-hidden divide-y divide-milk-tea-100">
+                {searchResults.map((place) => (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => handleSelectPlace(place)}
+                    className="w-full text-left px-3 py-2.5 hover:bg-milk-tea-50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-milk-tea-900 truncate">{place.name}</p>
+                        <p className="text-[10px] text-milk-tea-400 truncate mt-0.5">{place.address}</p>
+                      </div>
+                      <span className="text-[10px] text-milk-tea-300 font-mono ml-2 flex-shrink-0">
+                        {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
+                      </span>
+                    </div>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSearchResults([])}
+                  className="w-full py-2 text-[10px] text-milk-tea-300 hover:text-milk-tea-500 flex items-center justify-center space-x-1"
+                >
+                  <X size={10} />
+                  <span>收起</span>
+                </button>
+              </div>
+            )}
+
+            <p className="text-[10px] text-milk-tea-300 text-center">
+              找不到？試試在 Naver Map 搜尋後貼上連結
+              <button
+                type="button"
+                onClick={() => setInputMode('naver')}
+                className="ml-1 underline text-milk-tea-400"
+              >
+                切換
+              </button>
+            </p>
+          </div>
+        )}
+
+        {inputMode === 'naver' && (
+          <div className="space-y-2">
+            <div className="flex space-x-2">
+              <input
+                type="text"
+                value={naverUrl}
+                onChange={(e) => setNaverUrl(e.target.value)}
+                placeholder="貼上 Naver Map 連結 (naver.me/...)"
+                className="flex-1 px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
+              />
+              <button
+                type="button"
+                onClick={handleParseNaver}
+                disabled={isParsing || !naverUrl}
+                className="px-4 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold hover:bg-milk-tea-600 disabled:opacity-50 transition-all flex items-center"
+              >
+                {isParsing ? <Loader2 size={16} className="animate-spin" /> : '解析'}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const url = `https://map.naver.com/v5/search/${encodeURIComponent(formData.name || '')}`;
+                window.open(url, '_blank');
+              }}
+              className="flex items-center space-x-1 text-[10px] text-milk-tea-400 hover:text-milk-tea-600"
+            >
+              <ExternalLink size={10} />
+              <span>開啟 Naver Map 搜尋地點</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Basic Info */}

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
+import { Navigation, Car, ExternalLink } from 'lucide-react';
 import { Transit, TransportMode } from '../../types';
 import { TransportIcon } from '../common/TransportIcon';
 import { openNaverMapDirections, openUberToDestination } from '../../utils/deepLink';
@@ -12,76 +13,73 @@ interface TransitCardProps {
   destinationCoords: { lat: number; lng: number };
 }
 
-export const TransitCard: React.FC<TransitCardProps> = ({ 
-  transit, 
-  originName, 
+const MODE_LABELS: Record<TransportMode, string> = {
+  walking: '步行',
+  bus: '公車',
+  subway: '地鐵',
+  taxi: '計程車',
+  uber: 'Uber',
+};
+
+export const TransitCard: React.FC<TransitCardProps> = ({
+  transit,
   destinationName,
-  originCoords,
-  destinationCoords
+  destinationCoords,
 }) => {
-  const [mode, setMode] = useState<TransportMode>(transit.selectedMode);
-  const estimate = transit.estimates[mode];
-
+  const estimate = transit.estimates[transit.selectedMode];
   const modes: TransportMode[] = ['walking', 'bus', 'subway', 'taxi'];
-
-  const getModeColor = (m: TransportMode) => {
-    switch (m) {
-      case 'walking': return 'bg-transport-walk';
-      case 'bus': return 'bg-transport-bus';
-      case 'subway': return 'bg-transport-subway';
-      case 'taxi': return 'bg-transport-taxi';
-      default: return 'bg-milk-tea-200';
-    }
-  };
 
   return (
     <div className="relative pl-12 py-2">
-      {/* Timeline connector line */}
+      {/* Timeline connector */}
       <div className="absolute left-[21px] top-0 bottom-0 w-0.5 border-l-2 border-dashed border-milk-tea-300" />
-      
-      <div className="bg-white/40 rounded-xl p-3 border border-milk-tea-200/50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <TransportIcon mode={mode} className="w-4 h-4 text-milk-tea-500" />
-            <span className="text-sm font-mono font-bold text-milk-tea-800">
-              {estimate?.duration || '--'} 分鐘
-            </span>
-            <span className="text-xs text-milk-tea-400">
-              ・ {estimate ? (estimate.distance / 1000).toFixed(1) : '--'} km
-            </span>
+
+      <div className="bg-white/40 rounded-xl p-3 border border-milk-tea-200/50 space-y-3">
+        {/* Mode selector + rough estimate */}
+        <div className="flex items-center justify-between">
+          <div className="flex space-x-1">
+            {modes.map((m) => (
+              <div
+                key={m}
+                title={MODE_LABELS[m]}
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                  m === transit.selectedMode
+                    ? 'bg-milk-tea-500 text-white shadow-sm'
+                    : 'bg-milk-tea-100 text-milk-tea-400'
+                }`}
+              >
+                <TransportIcon mode={m} className="w-3.5 h-3.5" />
+              </div>
+            ))}
           </div>
+          {estimate && (
+            <span className="text-[10px] text-milk-tea-400 font-mono">
+              約 {estimate.duration} 分鐘・{(estimate.distance / 1000).toFixed(1)} km
+              <span className="ml-1 text-milk-tea-300">（估算）</span>
+            </span>
+          )}
         </div>
 
-        <div className="flex space-x-1 mb-4">
-          {modes.map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex-1 py-1.5 rounded-full flex items-center justify-center transition-all ${
-                mode === m 
-                  ? `${getModeColor(m)} text-white shadow-sm scale-105` 
-                  : 'bg-milk-tea-100 text-milk-tea-400 hover:bg-milk-tea-200'
-              }`}
-            >
-              <TransportIcon mode={m} className="w-3.5 h-3.5" />
-            </button>
-          ))}
-        </div>
+        {/* Primary action: Naver Map */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
+          className="w-full py-2.5 bg-[#2DB400] text-white rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm"
+        >
+          <Navigation className="w-4 h-4" />
+          <span>在 Naver Map 查詢路線</span>
+          <ExternalLink className="w-3 h-3 opacity-70" />
+        </motion.button>
 
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
-            className="flex-1 py-2 bg-[#2DB400] text-white rounded-lg text-[10px] font-bold flex items-center justify-center"
-          >
-            📍 Naver 導航
-          </button>
-          <button 
-            onClick={() => openUberToDestination({ ...destinationCoords, name: destinationName })}
-            className="flex-1 py-2 bg-neutral-dark text-white rounded-lg text-[10px] font-bold flex items-center justify-center"
-          >
-            🚗 Uber 叫車
-          </button>
-        </div>
+        {/* Secondary: Uber */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => openUberToDestination({ ...destinationCoords, name: destinationName })}
+          className="w-full py-2 bg-milk-tea-900 text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 opacity-80"
+        >
+          <Car className="w-3.5 h-3.5" />
+          <span>Uber 叫車前往</span>
+        </motion.button>
       </div>
     </div>
   );
