@@ -14,6 +14,19 @@ interface SpotCardProps {
   index: number;
 }
 
+// 數字徽章馬卡龍色
+const BADGE_COLORS = ['#FF6FA3', '#8896F5', '#3DBDAD', '#E8A830', '#9B8FF5', '#E87DAA'];
+
+// 標籤馬卡龍色（背景、文字、邊框）
+const TAG_PALETTE = [
+  { bg: '#FED7DD', text: '#9C2B58', border: '#FFACBB' },
+  { bg: '#E8ECFF', text: '#2D3A8A', border: '#AAB6FB' },
+  { bg: '#D4F5EF', text: '#1A5A50', border: '#99F2E6' },
+  { bg: '#FFF7CC', text: '#7A5F00', border: '#FFE4A0' },
+  { bg: '#FFE8D6', text: '#8A4020', border: '#FFD4B8' },
+  { bg: '#EDE8FF', text: '#3A2A8A', border: '#C5B8FF' },
+];
+
 export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -58,7 +71,10 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index }) =>
       >
         <div className="relative">
           <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
-          <div className="absolute -top-2 -left-2 w-7 h-7 bg-milk-tea-500 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm">
+          <div
+            className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
+            style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}
+          >
             {index + 1}
           </div>
         </div>
@@ -157,11 +173,18 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index }) =>
               
               {spot.tags && spot.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {spot.tags.map(tag => (
-                    <span key={tag} className="px-2 py-1 bg-white text-milk-tea-400 rounded-lg text-[10px] font-medium border border-milk-tea-100">
-                      #{tag}
-                    </span>
-                  ))}
+                  {spot.tags.map((tag, i) => {
+                    const c = TAG_PALETTE[i % TAG_PALETTE.length];
+                    return (
+                      <span
+                        key={tag}
+                        className="px-2 py-1 rounded-lg text-[10px] font-medium border"
+                        style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
 

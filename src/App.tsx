@@ -110,8 +110,9 @@ export default function App() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className={`px-6 py-3 rounded-2xl shadow-xl flex items-center space-x-2 pointer-events-auto ${
-                toast.type === 'success' ? 'bg-milk-tea-700 text-white' :
-                toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-white text-milk-tea-900'
+                toast.type === 'success' ? 'bg-[#3DBDAD] text-white' :
+                toast.type === 'error'   ? 'bg-[#E8538C] text-white' :
+                                           'bg-[#E8A830] text-white'
               }`}
             >
               <span className="text-sm font-bold">{toast.message}</span>

@@ -23,6 +23,15 @@ const MODE_LABELS: Record<TransportMode, string> = {
   uber: 'Uber',
 };
 
+// 各交通模式專屬馬卡龍色
+const MODE_COLORS: Record<TransportMode, { bg: string; text: string }> = {
+  walking: { bg: '#3DBDAD', text: '#fff' },   // 薄荷
+  bus:     { bg: '#8896F5', text: '#fff' },   // 薰衣草
+  subway:  { bg: '#9B8FF5', text: '#fff' },   // 紫
+  taxi:    { bg: '#E8A830', text: '#fff' },   // 琥珀
+  uber:    { bg: '#2D2030', text: '#fff' },   // 深梅
+};
+
 export const TransitCard: React.FC<TransitCardProps> = ({
   transit,
   dayNumber,
@@ -44,21 +53,26 @@ export const TransitCard: React.FC<TransitCardProps> = ({
         {/* Mode selector */}
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
-            {modes.map((m) => (
-              <button
-                key={m}
-                type="button"
-                title={MODE_LABELS[m]}
-                onClick={() => updateTransitMode(dayNumber, transit.id, m)}
-                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${
-                  m === transit.selectedMode
-                    ? 'bg-milk-tea-500 text-white shadow-sm scale-110'
-                    : 'bg-milk-tea-100 text-milk-tea-400 hover:bg-milk-tea-200'
-                }`}
-              >
-                <TransportIcon mode={m} className="w-3.5 h-3.5" />
-              </button>
-            ))}
+            {modes.map((m) => {
+              const active = m === transit.selectedMode;
+              const color = MODE_COLORS[m];
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  title={MODE_LABELS[m]}
+                  onClick={() => updateTransitMode(dayNumber, transit.id, m)}
+                  style={active ? { backgroundColor: color.bg, color: color.text } : {}}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                    active
+                      ? 'shadow-sm scale-110'
+                      : 'bg-milk-tea-100 text-milk-tea-400 hover:bg-milk-tea-200'
+                  }`}
+                >
+                  <TransportIcon mode={m} className="w-3.5 h-3.5" />
+                </button>
+              );
+            })}
           </div>
           {estimate && (
             <span className="text-[10px] text-milk-tea-400 font-mono">
