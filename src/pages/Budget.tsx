@@ -12,7 +12,7 @@ interface BudgetProps {
 }
 
 const EMOJIS = ['🐱', '🐰', '🐻', '🦊', '🐶', '🐼', '🐨', '🦁', '🐯', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺'];
-const COLORS = ['#F76DAA', '#E8A0C8', '#E055A0', '#C24285', '#FFB3A0', '#B8E8D8', '#A8C0E8', '#C8B0E8'];
+const COLORS = ['#FFACBB', '#AAB6FB', '#99F2E6', '#FFFEE1', '#FFD4B8', '#C5B8FF', '#B8DCFF', '#FFE4A0'];
 
 export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   const [activeView, setActiveView] = useState<'expenses' | 'settlement' | 'participants'>('expenses');

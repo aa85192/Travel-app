@@ -9,6 +9,7 @@ import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate
 import { useTripStore } from './stores/tripStore';
 import { useUIStore } from './stores/uiStore';
 
+
 export default function App() {
   const [authed, setAuthed] = React.useState<boolean>(isAuthenticated);
   const [activeTab, setActiveTab] = React.useState('home');

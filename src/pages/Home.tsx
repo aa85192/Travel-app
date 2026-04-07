@@ -11,14 +11,14 @@ interface HomeProps {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  restaurant: '#E8A0C8',
-  attraction: '#F76DAA',
-  cafe:       '#FFB3A0',
-  shopping:   '#C8B0E8',
-  hotel:      '#A8C0E8',
-  transport:  '#C0D0F8',
-  activity:   '#F8D8A0',
-  other:      '#FF8FBE',
+  restaurant: '#AAB6FB',
+  attraction: '#FFACBB',
+  cafe:       '#FFD4B8',
+  shopping:   '#C5B8FF',
+  hotel:      '#B8DCFF',
+  transport:  '#AAB6FB',
+  activity:   '#FFE4A0',
+  other:      '#FF8FAF',
 };
 const CATEGORY_LABELS: Record<string, string> = {
   restaurant: '餐廳', attraction: '景點', cafe: '咖啡廳',
@@ -38,7 +38,7 @@ function DonutChart({ data, total }: {
   return (
     <svg width={88} height={88} viewBox="0 0 88 88" className="flex-shrink-0">
       {/* 背景環 */}
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#FFE8F1" strokeWidth={sw} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#FED7DD" strokeWidth={sw} />
       {/* 資料環：以 -90° 旋轉讓起點在 12 點鐘 */}
       <g transform={`rotate(-90, ${cx}, ${cy})`}>
         {data.map((seg, i) => {
@@ -58,10 +58,10 @@ function DonutChart({ data, total }: {
         })}
       </g>
       {/* 中心文字 */}
-      <text x={cx} y={cy - 5} textAnchor="middle" fontSize="7" fill="#E055A0" fontWeight="bold">
+      <text x={cx} y={cy - 5} textAnchor="middle" fontSize="7" fill="#E8538C" fontWeight="bold">
         已花
       </text>
-      <text x={cx} y={cy + 8} textAnchor="middle" fontSize="10" fill="#9C2F67" fontWeight="bold" fontFamily="monospace">
+      <text x={cx} y={cy + 8} textAnchor="middle" fontSize="10" fill="#9C2B58" fontWeight="bold" fontFamily="monospace">
         {total >= 10000 ? `${(total / 10000).toFixed(1)}萬` : total.toLocaleString()}
       </text>
     </svg>

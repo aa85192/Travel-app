@@ -6,40 +6,40 @@
   --font-body: "Noto Sans TC", sans-serif;
   --font-mono: "DM Mono", monospace;
 
-  /* ═══ 核心寶寶粉色系 ═══ */
-  --color-milk-tea-50: #FFF5F8;
-  --color-milk-tea-100: #FFE8F1;
-  --color-milk-tea-200: #FFD0E5;
-  --color-milk-tea-300: #FFB3D4;
-  --color-milk-tea-400: #FF8FBE;
-  --color-milk-tea-500: #F76DAA;
-  --color-milk-tea-600: #E055A0;
-  --color-milk-tea-700: #C24285;
-  --color-milk-tea-800: #9C2F67;
-  --color-milk-tea-900: #6B1D47;
+  /* ═══ 核心馬卡龍粉色系 ═══ */
+  --color-milk-tea-50: #FFF8FA;
+  --color-milk-tea-100: #FED7DD;
+  --color-milk-tea-200: #FFBFCA;
+  --color-milk-tea-300: #FFACBB;
+  --color-milk-tea-400: #FF8FAF;
+  --color-milk-tea-500: #FF6FA3;
+  --color-milk-tea-600: #E8538C;
+  --color-milk-tea-700: #C23E73;
+  --color-milk-tea-800: #9C2B58;
+  --color-milk-tea-900: #6B1A3C;
 
-  /* ═══ 輔助功能色 ═══ */
-  --color-accent-coral: #FFB3A0;
-  --color-accent-pink: #E8A0C8;
-  --color-accent-cream: #FFF0F5;
-  --color-accent-sage: #B8E8D8;
-  --color-accent-sky: #C0D0F8;
-  --color-accent-warning: #F8D8A0;
-  --color-accent-error: #E89898;
+  /* ═══ 輔助功能色（馬卡龍五色系） ═══ */
+  --color-accent-coral: #FFD4B8;
+  --color-accent-pink: #AAB6FB;
+  --color-accent-cream: #FFFEE1;
+  --color-accent-sage: #99F2E6;
+  --color-accent-sky: #B8DCFF;
+  --color-accent-warning: #FFE4A0;
+  --color-accent-error: #FFB3BA;
 
   /* ═══ 中性色 ═══ */
   --color-neutral-white: #FFFAFC;
-  --color-neutral-gray-1: #F8F0F5;
-  --color-neutral-gray-2: #DDD0D8;
-  --color-neutral-gray-3: #AA9AA8;
-  --color-neutral-dark: #3D2838;
+  --color-neutral-gray-1: #F5EDEF;
+  --color-neutral-gray-2: #E0D0D5;
+  --color-neutral-gray-3: #ADA0A5;
+  --color-neutral-dark: #2D2030;
 
-  /* ═══ 交通工具色碼 ═══ */
-  --color-transport-walk: #A8D8C0;
-  --color-transport-bus: #A8C0E8;
-  --color-transport-subway: #C8B0E8;
-  --color-transport-taxi: #F8E0A0;
-  --color-transport-uber: #3D2838;
+  /* ═══ 交通工具色碼（馬卡龍版） ═══ */
+  --color-transport-walk: #99F2E6;
+  --color-transport-bus: #AAB6FB;
+  --color-transport-subway: #C5B8FF;
+  --color-transport-taxi: #FFFEE1;
+  --color-transport-uber: #2D2030;
 
   --radius-photo: 14px;
 }
@@ -55,7 +55,7 @@
 
 @layer utilities {
   .shadow-glow {
-    box-shadow: 0 0 20px rgba(247, 109, 170, 0.2);
+    box-shadow: 0 0 20px rgba(255, 172, 187, 0.3);
   }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
