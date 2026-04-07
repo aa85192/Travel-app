@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Navigation, Car, ExternalLink } from 'lucide-react';
+import { Navigation, Car, ExternalLink, Loader2 } from 'lucide-react';
 import { Transit, TransportMode } from '../../types';
 import { TransportIcon } from '../common/TransportIcon';
 import { openNaverMapDirections, openUberToDestination } from '../../utils/deepLink';
 import { useTripStore } from '../../stores/tripStore';
+import { fetchWalkingRoute, fetchDrivingRoute } from '../../services/osrmService';
 
 interface TransitCardProps {
   transit: Transit;
@@ -25,24 +26,81 @@ const MODE_LABELS: Record<TransportMode, string> = {
 
 // 各交通模式專屬馬卡龍色
 const MODE_COLORS: Record<TransportMode, { bg: string; text: string }> = {
-  walking: { bg: '#3DBDAD', text: '#fff' },   // 薄荷
-  bus:     { bg: '#8896F5', text: '#fff' },   // 薰衣草
-  subway:  { bg: '#9B8FF5', text: '#fff' },   // 紫
-  taxi:    { bg: '#E8A830', text: '#fff' },   // 琥珀
-  uber:    { bg: '#2D2030', text: '#fff' },   // 深梅
+  walking: { bg: '#3DBDAD', text: '#fff' },
+  bus:     { bg: '#8896F5', text: '#fff' },
+  subway:  { bg: '#9B8FF5', text: '#fff' },
+  taxi:    { bg: '#E8A830', text: '#fff' },
+  uber:    { bg: '#2D2030', text: '#fff' },
 };
+
+// OSRM 可查的模式（公車/地鐵繼續用估算）
+const OSRM_SUPPORTED: Partial<Record<TransportMode, 'walking' | 'driving'>> = {
+  walking: 'walking',
+  taxi: 'driving',
+  uber: 'driving',
+};
+
+interface LiveEstimate {
+  duration: number;
+  distance: number;
+  isReal: boolean;  // true = OSRM 真實資料, false = Haversine 估算
+}
 
 export const TransitCard: React.FC<TransitCardProps> = ({
   transit,
   dayNumber,
   destinationName,
+  originCoords,
   destinationCoords,
 }) => {
   if (!transit) return null;
 
   const updateTransitMode = useTripStore((s) => s.updateTransitMode);
-  const estimate = transit.estimates[transit.selectedMode];
   const modes: TransportMode[] = ['walking', 'bus', 'subway', 'taxi', 'uber'];
+
+  // 從 OSRM 取得的即時路線（key = TransportMode）
+  const [liveData, setLiveData] = useState<Partial<Record<TransportMode, LiveEstimate>>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      const [walkRes, driveRes] = await Promise.all([
+        fetchWalkingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng),
+        fetchDrivingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng),
+      ]);
+      if (cancelled) return;
+
+      const next: Partial<Record<TransportMode, LiveEstimate>> = {};
+
+      if (walkRes) {
+        next.walking = { ...walkRes, isReal: true };
+      }
+      if (driveRes) {
+        const taxiEst = transit.estimates.taxi;
+        next.taxi = { ...driveRes, isReal: true };
+        next.uber = { ...driveRes, isReal: true };
+      }
+
+      setLiveData(next);
+      setLoading(false);
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng]);
+
+  const getEstimate = (mode: TransportMode): { duration: number; distance: number; isReal: boolean } | null => {
+    if (liveData[mode]) return liveData[mode]!;
+    const stored = transit.estimates[mode];
+    if (!stored) return null;
+    return { duration: stored.duration, distance: stored.distance, isReal: false };
+  };
+
+  const currentEst = getEstimate(transit.selectedMode);
+  const storedEst = transit.estimates[transit.selectedMode];
 
   return (
     <div className="relative pl-12 py-2">
@@ -74,22 +132,33 @@ export const TransitCard: React.FC<TransitCardProps> = ({
               );
             })}
           </div>
-          {estimate && (
-            <span className="text-[10px] text-milk-tea-400 font-mono">
-              約 {estimate.duration} 分・{(estimate.distance / 1000).toFixed(1)} km
-              {estimate.cost && (
-                <span className="ml-1 text-milk-tea-300">₩{estimate.cost.toLocaleString()}</span>
-              )}
-            </span>
-          )}
+
+          {/* 時間顯示 */}
+          <div className="text-right">
+            {loading && !currentEst ? (
+              <Loader2 size={12} className="animate-spin text-milk-tea-300 ml-auto" />
+            ) : currentEst ? (
+              <span className="text-[10px] text-milk-tea-400 font-mono">
+                約 {currentEst.duration} 分・{(currentEst.distance / 1000).toFixed(1)} km
+                {storedEst?.cost && (
+                  <span className="ml-1 text-milk-tea-300">₩{storedEst.cost.toLocaleString()}</span>
+                )}
+                <span className={`ml-1 text-[9px] ${currentEst.isReal ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}`}>
+                  {currentEst.isReal ? '● 實測' : '○ 估算'}
+                </span>
+              </span>
+            ) : null}
+          </div>
         </div>
 
-        {/* 估算提示 */}
-        <p className="text-[9px] text-milk-tea-300 -mt-1">
-          ⚠️ 時間為系統估算，實際請以 Naver Map 查詢為準
-        </p>
+        {/* 公車/地鐵估算說明 */}
+        {(transit.selectedMode === 'bus' || transit.selectedMode === 'subway') && (
+          <p className="text-[9px] text-milk-tea-300 -mt-1">
+            ○ 公車/地鐵時間為系統估算，請以 Naver Map 查詢為準
+          </p>
+        )}
 
-        {/* Primary action: Naver Map */}
+        {/* Primary: Naver Map */}
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
