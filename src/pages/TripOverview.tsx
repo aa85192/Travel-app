@@ -187,8 +187,9 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
                   <React.Fragment key={spot.id}>
                     <SpotCard spot={spot} dayNumber={currentDay} index={index} />
                     {index < activeDayPlan.spots.length - 1 && (
-                      <TransitCard 
-                        transit={activeDayPlan.transits[index]} 
+                      <TransitCard
+                        transit={activeDayPlan.transits[index]}
+                        dayNumber={currentDay}
                         originName={spot.name}
                         destinationName={activeDayPlan.spots[index + 1].name}
                         originCoords={{ lat: spot.lat, lng: spot.lng }}

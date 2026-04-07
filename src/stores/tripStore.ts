@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Trip, Spot, DayPlan, Transit } from '../types';
+import { Trip, Spot, DayPlan, Transit, TransportMode } from '../types';
 import { SAMPLE_TRIP } from '../data';
 import { recalculateDayTransits } from '../utils/recalculateTransits';
 import { getAuthHash } from '../components/PasswordGate';
@@ -33,7 +33,8 @@ interface TripState {
   deleteSpot: (dayNumber: number, spotId: string) => void;
   reorderSpots: (dayNumber: number, fromIndex: number, toIndex: number) => void;
   moveSpotAcrossDays: (spotId: string, fromDay: number, toDay: number, targetIndex: number) => void;
-  duplicateSpot: (spotId: string, fromDay: number, toDay: number) => void;
+  // Transit Actions
+  updateTransitMode: (dayNumber: number, transitId: string, mode: TransportMode) => void;
 }
 
 export const useTripStore = create<TripState>()(
@@ -252,6 +253,17 @@ export const useTripStore = create<TripState>()(
         });
 
         return { trip: { ...state.trip, days: finalDays } };
+      }),
+
+      updateTransitMode: (dayNumber, transitId, mode) => set((state) => {
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newTransits = day.transits.map((t) =>
+            t.id === transitId ? { ...t, selectedMode: mode } : t
+          );
+          return { ...day, transits: newTransits };
+        });
+        return { trip: { ...state.trip, days: newDays } };
       }),
 
       duplicateSpot: (spotId, fromDay, toDay) => set((state) => {
