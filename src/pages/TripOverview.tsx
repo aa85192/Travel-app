@@ -8,7 +8,6 @@ import {
 import { DaySelector } from '../components/itinerary/DaySelector';
 import { SpotCard } from '../components/itinerary/SpotCard';
 import { TransitCard } from '../components/itinerary/TransitCard';
-import { WeatherStrip } from '../components/weather/WeatherStrip';
 import { useTripStore } from '../stores/tripStore';
 import { useUIStore } from '../stores/uiStore';
 import { SpotEditModal } from '../components/editor/SpotEditModal';
@@ -47,6 +46,7 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saved' | 'loaded' | 'error'>('idle');
 
   const activeDayPlan = trip.days.find((d) => d.dayNumber === currentDay);
+  const activeDayWeather = weather.find((w) => w.date === activeDayPlan?.date);
 
   // Fetch weather on mount
   useEffect(() => {
@@ -246,14 +246,6 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
                 </div>
               </div>
 
-              {/* 天氣條 */}
-              {activeDayPlan && (
-                <WeatherStrip
-                  weather={weather}
-                  currentDate={activeDayPlan.date}
-                  loading={weatherLoading}
-                />
-              )}
             </div>
 
             {/* Itinerary List */}
@@ -269,7 +261,7 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
               ) : (
                 activeDayPlan?.spots.map((spot, index) => (
                   <React.Fragment key={spot.id}>
-                    <SpotCard spot={spot} dayNumber={currentDay} index={index} />
+                    <SpotCard spot={spot} dayNumber={currentDay} index={index} dayWeather={activeDayWeather} />
                     {index < activeDayPlan.spots.length - 1 && (
                       <TransitCard
                         transit={activeDayPlan.transits[index]}

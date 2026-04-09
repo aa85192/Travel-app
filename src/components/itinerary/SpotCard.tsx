@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MoreHorizontal, MapPin, Clock, CircleDollarSign, ChevronDown, Edit2, Trash2, Copy } from 'lucide-react';
+import { MoreHorizontal, MapPin, Clock, CircleDollarSign, Edit2, Trash2, Copy } from 'lucide-react';
 import { Spot } from '../../types';
 import { PhotoThumbnail } from '../common/PhotoThumbnail';
 import { openInNaverMap } from '../../utils/deepLink';
 import { useUIStore } from '../../stores/uiStore';
 import { useTripStore } from '../../stores/tripStore';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { DayWeather, weatherEmoji } from '../../services/weatherService';
 
 interface SpotCardProps {
   spot: Spot;
   dayNumber: number;
   index: number;
+  dayWeather?: DayWeather;
+}
+
+// 天氣chip 馬卡龍配色（平面無陰影）
+function weatherChipStyle(code: number): { bg: string; color: string } {
+  if (code === 0)  return { bg: '#FFF7CC', color: '#7A5F00' }; // 晴：奶油黃
+  if (code <= 2)   return { bg: '#FFF7CC', color: '#7A5F00' }; // 晴時多雲
+  if (code <= 3)   return { bg: '#E8ECFF', color: '#2D3A8A' }; // 多雲：薰衣草
+  if (code <= 48)  return { bg: '#F0F0F0', color: '#555555' }; // 霧：灰
+  if (code <= 65)  return { bg: '#D4F5EF', color: '#1A5A50' }; // 雨：薄荷
+  if (code <= 77)  return { bg: '#EDE8FF', color: '#3A2A8A' }; // 雪：淡紫
+  if (code <= 86)  return { bg: '#D4F5EF', color: '#1A5A50' }; // 陣雨
+  return { bg: '#FED7DD', color: '#9C2B58' };                   // 雷雨：粉
 }
 
 // 數字徽章馬卡龍色
@@ -27,7 +41,7 @@ const TAG_PALETTE = [
   { bg: '#EDE8FF', text: '#3A2A8A', border: '#C5B8FF' },
 ];
 
-export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index }) => {
+export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayWeather }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -69,14 +83,34 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index }) =>
         className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="relative">
-          <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
-          <div
-            className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
-            style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}
-          >
-            {index + 1}
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
+            <div
+              className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
+              style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}
+            >
+              {index + 1}
+            </div>
           </div>
+          {/* 天氣小chip */}
+          {dayWeather && (() => {
+            const { bg, color } = weatherChipStyle(dayWeather.code);
+            return (
+              <div
+                className="mt-1.5 px-1.5 py-0.5 rounded-lg flex flex-col items-center"
+                style={{ backgroundColor: bg }}
+              >
+                <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
+                <span className="text-[8px] font-bold mt-0.5" style={{ color }}>
+                  {dayWeather.precipProb}%
+                </span>
+                <span className="text-[8px] font-bold" style={{ color }}>
+                  {dayWeather.tempMax}°
+                </span>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="flex-1 min-w-0">

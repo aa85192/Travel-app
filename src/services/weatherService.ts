@@ -6,10 +6,11 @@
 const SEOUL = { lat: 37.5665, lng: 126.9780 };
 
 export interface DayWeather {
-  date: string;     // YYYY-MM-DD
-  code: number;     // WMO weather code
-  tempMax: number;  // °C
-  tempMin: number;  // °C
+  date: string;       // YYYY-MM-DD
+  code: number;       // WMO weather code
+  tempMax: number;    // °C
+  tempMin: number;    // °C
+  precipProb: number; // 降雨機率 0-100
 }
 
 function addDays(dateStr: string, n: number): string {
@@ -42,7 +43,7 @@ export async function fetchWeatherRange(
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude',   String(lat));
     url.searchParams.set('longitude',  String(lng));
-    url.searchParams.set('daily',      'weather_code,temperature_2m_max,temperature_2m_min');
+    url.searchParams.set('daily',      'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max');
     url.searchParams.set('timezone',   'Asia/Seoul');
     url.searchParams.set('start_date', from);
     url.searchParams.set('end_date',   to);
@@ -51,13 +52,14 @@ export async function fetchWeatherRange(
     if (!res.ok) return [];
 
     const data = await res.json();
-    const { time, weather_code, temperature_2m_max, temperature_2m_min } = data.daily;
+    const { time, weather_code, temperature_2m_max, temperature_2m_min, precipitation_probability_max } = data.daily;
 
     return (time as string[]).map((date, i) => ({
       date,
-      code:    weather_code[i] as number,
-      tempMax: Math.round(temperature_2m_max[i] as number),
-      tempMin: Math.round(temperature_2m_min[i] as number),
+      code:       weather_code[i] as number,
+      tempMax:    Math.round(temperature_2m_max[i] as number),
+      tempMin:    Math.round(temperature_2m_min[i] as number),
+      precipProb: Math.round((precipitation_probability_max?.[i] as number) ?? 0),
     }));
   } catch {
     return [];
