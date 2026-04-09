@@ -169,12 +169,17 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
           </div>
         </div>
 
-        {/* 天氣chip：absolute 定位，不影響卡片大小 */}
+        {/* 天氣chip：點擊開啟 Naver 天氣 */}
         {dayWeather && (() => {
           const { bg, color } = weatherChipStyle(dayWeather.code);
           return (
             <div
-              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg pointer-events-none"
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open('https://weather.naver.com', '_blank', 'noopener');
+              }}
+              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform"
               style={{ backgroundColor: bg }}
             >
               <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
