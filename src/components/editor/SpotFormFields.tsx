@@ -5,6 +5,7 @@ import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
 import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
+import { searchSpotsWithGemini, GeminiSpotResult } from '../../services/geminiSearchService';
 import { fetchWikipediaPhoto } from '../../services/wikipediaPhotoService';
 import { useUIStore } from '../../stores/uiStore';
 import { fetchExchangeRates } from '../../services/exchangeRateService';
@@ -21,6 +22,8 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [geminiResults, setGeminiResults] = useState<GeminiSpotResult[]>([]);
+  const [isGeminiSearching, setIsGeminiSearching] = useState(false);
   const [isFetchingPhoto, setIsFetchingPhoto] = useState(false);
   const [inputMode, setInputMode] = useState<'search' | 'naver'>('search');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +71,56 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
       addToast('解析過程發生錯誤', 'error');
     } finally {
       setIsParsing(false);
+    }
+  };
+
+  const handleGeminiSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setIsGeminiSearching(true);
+    setGeminiResults([]);
+    setSearchResults([]);
+    try {
+      const results = await searchSpotsWithGemini(searchQuery);
+      if (results.length === 0) {
+        addToast('Gemini 找不到相關景點，請換個描述', 'error');
+      } else {
+        setGeminiResults(results);
+      }
+    } catch (e: any) {
+      addToast(`AI 搜尋失敗：${e.message}`, 'error');
+    } finally {
+      setIsGeminiSearching(false);
+    }
+  };
+
+  const handleSelectGeminiPlace = async (place: GeminiSpotResult) => {
+    const newData: Partial<Spot> = {
+      ...formData,
+      name: place.nameZh,
+      nameLocal: place.nameKo,
+      lat: place.lat,
+      lng: place.lng,
+      address: place.address || formData.address,
+      category: (place.category as SpotCategory) || formData.category,
+    };
+    setFormData(newData);
+    setGeminiResults([]);
+    setSearchQuery('');
+
+    // 嘗試自動抓照片
+    setIsFetchingPhoto(true);
+    try {
+      const photoUrl = await fetchWikipediaPhoto(place.nameKo, place.nameEn || place.nameZh);
+      if (photoUrl) {
+        setFormData({ ...newData, photo: photoUrl });
+        addToast(`✅ 已選擇「${place.nameZh}」並取得照片`, 'success');
+      } else {
+        addToast(`✅ 已選擇「${place.nameZh}」`, 'success');
+      }
+    } catch {
+      addToast(`✅ 已選擇「${place.nameZh}」`, 'success');
+    } finally {
+      setIsFetchingPhoto(false);
     }
   };
 
@@ -189,21 +242,66 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setGeminiResults([]);
+                  setSearchResults([]);
+                }}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 placeholder="輸入地點名稱（中文、韓文、英文皆可）"
                 className="flex-1 px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
               />
+              {/* AI 韓文搜尋按鈕 */}
+              <button
+                type="button"
+                onClick={handleGeminiSearch}
+                disabled={isGeminiSearching || !searchQuery.trim()}
+                title="用 AI 翻譯成韓文並搜尋"
+                className="px-3 py-2 bg-[#E8ECFF] text-[#2D3A8A] rounded-xl text-xs font-black disabled:opacity-50 transition-all flex items-center space-x-1 hover:bg-[#AAB6FB] hover:text-white border border-[#AAB6FB]"
+              >
+                {isGeminiSearching
+                  ? <Loader2 size={13} className="animate-spin" />
+                  : <span>🇰🇷 韓</span>
+                }
+              </button>
+              {/* 一般搜尋按鈕 */}
               <button
                 type="button"
                 onClick={handleSearch}
                 disabled={isSearching || !searchQuery.trim()}
-                className="px-4 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
+                className="px-3 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
               >
                 {isSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
               </button>
             </div>
 
+            {/* Gemini AI 結果下拉 */}
+            {geminiResults.length > 0 && (
+              <div className="rounded-xl border border-[#AAB6FB] overflow-hidden divide-y divide-[#E8ECFF] bg-white shadow-md">
+                <div className="px-3 py-1.5 bg-[#E8ECFF] flex items-center justify-between">
+                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ AI 建議景點（點選套用）</span>
+                  <button type="button" onClick={() => setGeminiResults([])} className="text-[#8896F5] hover:text-[#2D3A8A]">
+                    <X size={12} />
+                  </button>
+                </div>
+                {geminiResults.map((place, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSelectGeminiPlace(place)}
+                    className="w-full text-left px-3 py-2.5 hover:bg-[#E8ECFF]/50 transition-colors"
+                  >
+                    <p className="text-sm font-black text-milk-tea-900">{place.nameKo}</p>
+                    {place.nameZh && (
+                      <p className="text-[10px] font-bold text-milk-tea-500 mt-0.5">{place.nameZh}</p>
+                    )}
+                    <p className="text-[10px] text-milk-tea-300 mt-0.5 leading-snug">{place.description}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 一般搜尋結果 */}
             {searchResults.length > 0 && (
               <div className="rounded-xl border border-milk-tea-200 overflow-hidden divide-y divide-milk-tea-100">
                 {searchResults.map((place) => (
