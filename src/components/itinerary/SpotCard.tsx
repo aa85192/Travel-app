@@ -83,34 +83,14 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
         className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
-            <div
-              className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
-              style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}
-            >
-              {index + 1}
-            </div>
+        <div className="relative">
+          <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
+          <div
+            className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
+            style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}
+          >
+            {index + 1}
           </div>
-          {/* 天氣小chip */}
-          {dayWeather && (() => {
-            const { bg, color } = weatherChipStyle(dayWeather.code);
-            return (
-              <div
-                className="mt-1.5 px-1.5 py-0.5 rounded-lg flex flex-col items-center"
-                style={{ backgroundColor: bg }}
-              >
-                <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
-                <span className="text-[8px] font-bold mt-0.5" style={{ color }}>
-                  {dayWeather.precipProb}%
-                </span>
-                <span className="text-[8px] font-bold" style={{ color }}>
-                  {dayWeather.tempMax}°
-                </span>
-              </div>
-            );
-          })()}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -175,17 +155,37 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
             <span className="truncate">{spot.address}</span>
           </div>
 
-          <div className="flex items-center space-x-3 mt-2 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
-            <div className="flex items-center">
-              <Clock size={12} className="mr-1" />
-              {spot.duration} 分鐘
-            </div>
-            {spot.cost !== undefined && (
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center space-x-3 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
               <div className="flex items-center">
-                <CircleDollarSign size={12} className="mr-1" />
-                ₩ {spot.cost.toLocaleString()}
+                <Clock size={12} className="mr-1" />
+                {spot.duration} 分鐘
               </div>
-            )}
+              {spot.cost !== undefined && (
+                <div className="flex items-center">
+                  <CircleDollarSign size={12} className="mr-1" />
+                  ₩ {spot.cost.toLocaleString()}
+                </div>
+              )}
+            </div>
+            {/* 天氣橫向chip */}
+            {dayWeather && (() => {
+              const { bg, color } = weatherChipStyle(dayWeather.code);
+              return (
+                <div
+                  className="flex items-center space-x-1 px-2 py-1 rounded-lg"
+                  style={{ backgroundColor: bg }}
+                >
+                  <span className="text-xs leading-none">{weatherEmoji(dayWeather.code)}</span>
+                  <span className="text-[9px] font-bold" style={{ color }}>
+                    {dayWeather.precipProb}%
+                  </span>
+                  <span className="text-[9px] font-bold" style={{ color }}>
+                    {dayWeather.tempMax}°/{dayWeather.tempMin}°
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
