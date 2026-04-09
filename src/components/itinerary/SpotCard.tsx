@@ -173,16 +173,19 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
               const { bg, color } = weatherChipStyle(dayWeather.code);
               return (
                 <div
-                  className="flex items-center space-x-1 px-2 py-1 rounded-lg"
+                  className="flex flex-col items-center px-2.5 py-1.5 rounded-lg"
                   style={{ backgroundColor: bg }}
                 >
-                  <span className="text-xs leading-none">{weatherEmoji(dayWeather.code)}</span>
-                  <span className="text-[9px] font-bold" style={{ color }}>
-                    {dayWeather.precipProb}%
-                  </span>
-                  <span className="text-[9px] font-bold" style={{ color }}>
-                    {dayWeather.tempMax}°/{dayWeather.tempMin}°
-                  </span>
+                  <span className="text-base leading-none mb-1">{weatherEmoji(dayWeather.code)}</span>
+                  <div className="flex items-center space-x-1">
+                    <span className="text-[8px] font-bold" style={{ color }}>
+                      {dayWeather.precipProb}%
+                    </span>
+                    <span className="text-[8px] font-bold opacity-40" style={{ color }}>·</span>
+                    <span className="text-[8px] font-bold" style={{ color }}>
+                      {dayWeather.tempMax}°/{dayWeather.tempMin}°
+                    </span>
+                  </div>
                 </div>
               );
             })()}
