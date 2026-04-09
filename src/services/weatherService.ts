@@ -95,7 +95,26 @@ export function weatherLabel(code: number): string {
   return '雷雨';
 }
 
-/** 取得相對日期標籤 */
+/** 以 lat/lng/date 為 key 的 in-memory cache，避免同日附近景點重複呼叫 */
+const weatherCache = new Map<string, DayWeather>();
+
+/**
+ * 查詢單一景點的天氣（供 SpotCard 使用）
+ * lat/lng 精確到小數第 1 位做快取 key（首爾市內景點會共用，不同城市分開）
+ */
+export async function fetchSpotWeather(
+  lat: number,
+  lng: number,
+  date: string,
+): Promise<DayWeather | null> {
+  const key = `${lat.toFixed(1)},${lng.toFixed(1)},${date}`;
+  if (weatherCache.has(key)) return weatherCache.get(key)!;
+
+  const data = await fetchWeatherRange(date, date, lat, lng);
+  const hit = data.find(d => d.date === date) ?? data[0] ?? null;
+  if (hit) weatherCache.set(key, hit);
+  return hit;
+}
 export function relativeDateLabel(date: string, anchor: string): string {
   const diff = Math.round(
     (new Date(date).getTime() - new Date(anchor).getTime()) / 86400000

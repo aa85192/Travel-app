@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MoreHorizontal, MapPin, Clock, CircleDollarSign, Edit2, Trash2, Copy } from 'lucide-react';
 import { Spot } from '../../types';
@@ -7,13 +7,13 @@ import { openInNaverMap } from '../../utils/deepLink';
 import { useUIStore } from '../../stores/uiStore';
 import { useTripStore } from '../../stores/tripStore';
 import { ConfirmDialog } from '../common/ConfirmDialog';
-import { DayWeather, weatherEmoji } from '../../services/weatherService';
+import { DayWeather, weatherEmoji, fetchSpotWeather } from '../../services/weatherService';
 
 interface SpotCardProps {
   spot: Spot;
   dayNumber: number;
   index: number;
-  dayWeather?: DayWeather;
+  dayDate?: string;  // YYYY-MM-DD，用來查該景點當天天氣
 }
 
 // 天氣chip 馬卡龍配色（平面無陰影）
@@ -41,9 +41,17 @@ const TAG_PALETTE = [
   { bg: '#EDE8FF', text: '#3A2A8A', border: '#C5B8FF' },
 ];
 
-export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayWeather }) => {
+export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayDate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [dayWeather, setDayWeather] = useState<DayWeather | null>(null);
+
+  useEffect(() => {
+    if (!dayDate) return;
+    fetchSpotWeather(spot.lat, spot.lng, dayDate).then(w => {
+      if (w) setDayWeather(w);
+    });
+  }, [spot.lat, spot.lng, dayDate]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { openModal, addToast } = useUIStore();
   const { deleteSpot } = useTripStore();
@@ -177,7 +185,10 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
               role="button"
               onClick={(e) => {
                 e.stopPropagation();
-                window.open('https://weather.naver.com', '_blank', 'noopener');
+                window.open(
+                  `https://www.windy.com/?rain,${spot.lat},${spot.lng},12`,
+                  '_blank', 'noopener'
+                );
               }}
               className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform"
               style={{ backgroundColor: bg }}

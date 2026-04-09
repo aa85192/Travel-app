@@ -18,7 +18,6 @@ import { CopySpotModal } from '../components/editor/CopySpotModal';
 import { ReorderModeBanner } from '../components/reorder/ReorderModeBanner';
 import { SpotReorderMode } from '../components/reorder/SpotReorderMode';
 import { DayReorderMode } from '../components/reorder/DayReorderMode';
-import { fetchWeatherRange, DayWeather } from '../services/weatherService';
 import { saveTrip, loadTrip, getOrCreateSyncCode } from '../services/syncService';
 
 interface TripOverviewProps {
@@ -32,10 +31,6 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showTripMenu, setShowTripMenu] = useState(false);
 
-  // Weather
-  const [weather, setWeather] = useState<DayWeather[]>([]);
-  const [weatherLoading, setWeatherLoading] = useState(true);
-
   // Cloud Sync
   const [showSyncPanel, setShowSyncPanel] = useState(false);
   const [syncCode] = useState(() => getOrCreateSyncCode());
@@ -46,20 +41,6 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saved' | 'loaded' | 'error'>('idle');
 
   const activeDayPlan = trip.days.find((d) => d.dayNumber === currentDay);
-  const activeDayWeather = weather.find((w) => w.date === activeDayPlan?.date);
-
-  // Fetch weather on mount
-  useEffect(() => {
-    let cancelled = false;
-    setWeatherLoading(true);
-    fetchWeatherRange(trip.startDate, trip.endDate).then((data) => {
-      if (!cancelled) {
-        setWeather(data);
-        setWeatherLoading(false);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [trip.startDate, trip.endDate]);
 
   const handleEditTrip = () => {
     openModal('trip-info', { tripId: trip.id, dayNumber: 1 });
@@ -261,7 +242,7 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
               ) : (
                 activeDayPlan?.spots.map((spot, index) => (
                   <React.Fragment key={spot.id}>
-                    <SpotCard spot={spot} dayNumber={currentDay} index={index} dayWeather={activeDayWeather} />
+                    <SpotCard spot={spot} dayNumber={currentDay} index={index} dayDate={activeDayPlan?.date} />
                     {index < activeDayPlan.spots.length - 1 && (
                       <TransitCard
                         transit={activeDayPlan.transits[index]}
