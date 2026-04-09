@@ -155,7 +155,7 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
             <span className="truncate">{spot.address}</span>
           </div>
 
-          <div className="flex items-center justify-between mt-2">
+          <div className="flex items-end justify-between mt-2">
             <div className="flex items-center space-x-3 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
               <div className="flex items-center">
                 <Clock size={12} className="mr-1" />
