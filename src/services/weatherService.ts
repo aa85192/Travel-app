@@ -27,8 +27,16 @@ export async function fetchWeatherRange(
   lat = SEOUL.lat,
   lng = SEOUL.lng,
 ): Promise<DayWeather[]> {
+  const today = new Date().toISOString().split('T')[0];
+  const maxForecast = addDays(today, 15); // Open-Meteo 最多 16 天
+
   const from = addDays(startDate, -2);
-  const to   = addDays(endDate,    2);
+  const to   = addDays(endDate,    2) <= maxForecast
+    ? addDays(endDate, 2)
+    : maxForecast;
+
+  // 完全超出預報範圍
+  if (from > maxForecast) return [];
 
   try {
     const url = new URL('https://api.open-meteo.com/v1/forecast');
