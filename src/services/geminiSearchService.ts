@@ -1,9 +1,7 @@
 /**
  * Gemini AI 景點搜尋服務
- * 使用 @google/genai SDK（更穩定）
+ * 使用 REST API fetch（瀏覽器相容）
  */
-
-import { GoogleGenAI } from '@google/genai';
 
 export interface GeminiSpotResult {
   nameKo: string;
@@ -23,8 +21,6 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     throw new Error('GEMINI_API_KEY 未設定，請確認 GitHub Secrets 有加入此變數');
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-
   const prompt = `你是韓國旅遊助手。用戶輸入："${query}"
 
 找出最符合的韓國景點或店家（最多3個）。
@@ -40,12 +36,24 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
 
 只回傳 JSON 陣列，不含任何 markdown 或其他文字。`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
-    contents: prompt,
-  });
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+      }),
+    }
+  );
 
-  const text = response.text?.trim() ?? '';
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
+  }
+
+  const data = await res.json();
+  const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
   if (!text) throw new Error('Gemini 回傳空內容');
 
   // 清除 markdown code block
