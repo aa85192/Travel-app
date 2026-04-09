@@ -45,11 +45,14 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [dayWeather, setDayWeather] = useState<DayWeather | null>(null);
+  const [weatherLoaded, setWeatherLoaded] = useState(false);
 
   useEffect(() => {
     if (!dayDate) return;
+    setWeatherLoaded(false);
     fetchSpotWeather(spot.lat, spot.lng, dayDate).then(w => {
-      if (w) setDayWeather(w);
+      setDayWeather(w);
+      setWeatherLoaded(true);
     });
   }, [spot.lat, spot.lng, dayDate]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -177,31 +180,43 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
           </div>
         </div>
 
-        {/* 天氣chip：點擊開啟 Naver 天氣 */}
-        {dayWeather && (() => {
-          const { bg, color } = weatherChipStyle(dayWeather.code);
-          return (
+        {/* 天氣chip：有資料→顯示天氣；超出預報範圍→顯示佔位符 */}
+        {dayDate && weatherLoaded && (
+          dayWeather ? (
+            (() => {
+              const { bg, color } = weatherChipStyle(dayWeather.code);
+              return (
+                <div
+                  role="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(
+                      `https://www.windy.com/?rain,${spot.lat},${spot.lng},12`,
+                      '_blank', 'noopener'
+                    );
+                  }}
+                  className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform"
+                  style={{ backgroundColor: bg }}
+                >
+                  <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
+                  <div className="flex items-center space-x-0.5 mt-0.5">
+                    <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.precipProb}%</span>
+                    <span className="text-[8px] opacity-30" style={{ color }}>·</span>
+                    <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.tempMax}°/{dayWeather.tempMin}°</span>
+                  </div>
+                </div>
+              );
+            })()
+          ) : (
             <div
-              role="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(
-                  `https://www.windy.com/?rain,${spot.lat},${spot.lng},12`,
-                  '_blank', 'noopener'
-                );
-              }}
-              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform"
-              style={{ backgroundColor: bg }}
+              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg opacity-30"
+              style={{ backgroundColor: '#F0F0F0' }}
             >
-              <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
-              <div className="flex items-center space-x-0.5 mt-0.5">
-                <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.precipProb}%</span>
-                <span className="text-[8px] opacity-30" style={{ color }}>·</span>
-                <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.tempMax}°/{dayWeather.tempMin}°</span>
-              </div>
+              <span className="text-base leading-none">🗓️</span>
+              <span className="text-[8px] font-bold text-gray-400 mt-0.5">預報中</span>
             </div>
-          );
-        })()}
+          )
+        )}
       </div>
 
       <AnimatePresence>
