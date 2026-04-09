@@ -1,7 +1,11 @@
 /**
  * Exchange Rate Service
- * 優先使用 Visa 官方匯率計算機 API，失敗時 fallback 至 open.er-api.com
+ * 透過 Cloudflare Worker 代理取得 Visa 官方即時匯率
+ * Worker URL: https://visa-rate.aa85192.workers.dev
+ * 失敗時 fallback 至 open.er-api.com
  */
+
+const WORKER_URL = 'https://visa-rate.aa85192.workers.dev';
 
 export interface RateResult {
   KRW: number;  // 1 TWD = X KRW
@@ -11,30 +15,16 @@ export interface RateResult {
 }
 
 /**
- * 嘗試從 Visa 匯率計算機取得 TWD→KRW 即時匯率
+ * 透過 Cloudflare Worker 取得 Visa 即時匯率（1 TWD → KRW）
  */
 async function fetchVisaRate(): Promise<number | null> {
   try {
-    const today = new Date();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    const dateStr = `${mm}/${dd}/${yyyy}`;
-
-    // Visa 公開匯率計算機 API（1 TWD → KRW）
-    const url =
-      `https://www.visa.com/cgi-bin/vipseg/exchangeRateByBank.do` +
-      `?fromCurr=TWD&toCurr=KRW&bankFee=0&transactionDate=${dateStr}&amount=1`;
-
-    const res = await fetch(url, {
-      signal: AbortSignal.timeout(5000),
-      headers: { 'Accept': 'application/json' },
+    const res = await fetch(`${WORKER_URL}?from=TWD&to=KRW`, {
+      signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return null;
-
     const data = await res.json();
-    // Visa API 回傳 convertedAmount（1 TWD 等於多少 KRW）
-    const rate = parseFloat(data?.convertedAmount);
+    const rate = parseFloat(data?.rate);
     if (!isNaN(rate) && rate > 0) return rate;
     return null;
   } catch {
