@@ -91,7 +91,7 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
       className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 overflow-hidden hover:shadow-md transition-all"
     >
       <div
-        className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform relative"
+        className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
@@ -166,57 +166,60 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
             <span className="truncate">{spot.address}</span>
           </div>
 
-          <div className="flex items-center space-x-3 mt-2 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
-            <div className="flex items-center">
-              <Clock size={12} className="mr-1" />
-              {spot.duration} 分鐘
-            </div>
-            {spot.cost !== undefined && (
-              <div className="flex items-center">
-                <CircleDollarSign size={12} className="mr-1" />
-                ₩ {spot.cost.toLocaleString()}
+          {/* 底列：時間 / 費用 / 天氣chip（同一行，不重疊） */}
+          <div className="flex items-center mt-2 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="flex items-center flex-shrink-0">
+                <Clock size={12} className="mr-1" />
+                {spot.duration} 分鐘
               </div>
+              {spot.cost !== undefined && (
+                <div className="flex items-center flex-shrink-0">
+                  <CircleDollarSign size={12} className="mr-1" />
+                  ₩ {spot.cost.toLocaleString()}
+                </div>
+              )}
+            </div>
+
+            {/* 天氣chip：有資料→顯示天氣；超出預報範圍→顯示佔位符 */}
+            {dayDate && weatherLoaded && (
+              dayWeather ? (
+                (() => {
+                  const { bg, color } = weatherChipStyle(dayWeather.code);
+                  return (
+                    <div
+                      role="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(
+                          `https://www.windy.com/?rain,${spot.lat},${spot.lng},12`,
+                          '_blank', 'noopener'
+                        );
+                      }}
+                      className="flex-shrink-0 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform ml-2"
+                      style={{ backgroundColor: bg }}
+                    >
+                      <span className="text-sm leading-none">{weatherEmoji(dayWeather.code)}</span>
+                      <div className="flex items-center space-x-0.5 mt-0.5">
+                        <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.precipProb}%</span>
+                        <span className="text-[8px] opacity-30" style={{ color }}>·</span>
+                        <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.tempMax}°/{dayWeather.tempMin}°</span>
+                      </div>
+                    </div>
+                  );
+                })()
+              ) : (
+                <div
+                  className="flex-shrink-0 flex flex-col items-center px-2 py-1 rounded-lg opacity-25 ml-2"
+                  style={{ backgroundColor: '#F0F0F0' }}
+                >
+                  <span className="text-sm leading-none">🗓️</span>
+                  <span className="text-[8px] font-bold text-gray-400 mt-0.5">預報中</span>
+                </div>
+              )
             )}
           </div>
         </div>
-
-        {/* 天氣chip：有資料→顯示天氣；超出預報範圍→顯示佔位符 */}
-        {dayDate && weatherLoaded && (
-          dayWeather ? (
-            (() => {
-              const { bg, color } = weatherChipStyle(dayWeather.code);
-              return (
-                <div
-                  role="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(
-                      `https://www.windy.com/?rain,${spot.lat},${spot.lng},12`,
-                      '_blank', 'noopener'
-                    );
-                  }}
-                  className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg cursor-pointer active:scale-95 transition-transform"
-                  style={{ backgroundColor: bg }}
-                >
-                  <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
-                  <div className="flex items-center space-x-0.5 mt-0.5">
-                    <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.precipProb}%</span>
-                    <span className="text-[8px] opacity-30" style={{ color }}>·</span>
-                    <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.tempMax}°/{dayWeather.tempMin}°</span>
-                  </div>
-                </div>
-              );
-            })()
-          ) : (
-            <div
-              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg opacity-30"
-              style={{ backgroundColor: '#F0F0F0' }}
-            >
-              <span className="text-base leading-none">🗓️</span>
-              <span className="text-[8px] font-bold text-gray-400 mt-0.5">預報中</span>
-            </div>
-          )
-        )}
       </div>
 
       <AnimatePresence>
