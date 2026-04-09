@@ -79,8 +79,8 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
       transition={{ delay: index * 0.1 }}
       className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 overflow-hidden hover:shadow-md transition-all"
     >
-      <div 
-        className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform"
+      <div
+        className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform relative"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
@@ -155,42 +155,37 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayW
             <span className="truncate">{spot.address}</span>
           </div>
 
-          <div className="flex items-end justify-between mt-2">
-            <div className="flex items-center space-x-3 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
-              <div className="flex items-center">
-                <Clock size={12} className="mr-1" />
-                {spot.duration} 分鐘
-              </div>
-              {spot.cost !== undefined && (
-                <div className="flex items-center">
-                  <CircleDollarSign size={12} className="mr-1" />
-                  ₩ {spot.cost.toLocaleString()}
-                </div>
-              )}
+          <div className="flex items-center space-x-3 mt-2 text-[10px] font-bold text-milk-tea-500 uppercase tracking-wider">
+            <div className="flex items-center">
+              <Clock size={12} className="mr-1" />
+              {spot.duration} 分鐘
             </div>
-            {/* 天氣橫向chip */}
-            {dayWeather && (() => {
-              const { bg, color } = weatherChipStyle(dayWeather.code);
-              return (
-                <div
-                  className="flex flex-col items-center px-2.5 py-1.5 rounded-lg"
-                  style={{ backgroundColor: bg }}
-                >
-                  <span className="text-base leading-none mb-1">{weatherEmoji(dayWeather.code)}</span>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-[8px] font-bold" style={{ color }}>
-                      {dayWeather.precipProb}%
-                    </span>
-                    <span className="text-[8px] font-bold opacity-40" style={{ color }}>·</span>
-                    <span className="text-[8px] font-bold" style={{ color }}>
-                      {dayWeather.tempMax}°/{dayWeather.tempMin}°
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
+            {spot.cost !== undefined && (
+              <div className="flex items-center">
+                <CircleDollarSign size={12} className="mr-1" />
+                ₩ {spot.cost.toLocaleString()}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* 天氣chip：absolute 定位，不影響卡片大小 */}
+        {dayWeather && (() => {
+          const { bg, color } = weatherChipStyle(dayWeather.code);
+          return (
+            <div
+              className="absolute bottom-4 right-4 flex flex-col items-center px-2 py-1 rounded-lg pointer-events-none"
+              style={{ backgroundColor: bg }}
+            >
+              <span className="text-base leading-none">{weatherEmoji(dayWeather.code)}</span>
+              <div className="flex items-center space-x-0.5 mt-0.5">
+                <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.precipProb}%</span>
+                <span className="text-[8px] opacity-30" style={{ color }}>·</span>
+                <span className="text-[8px] font-bold" style={{ color }}>{dayWeather.tempMax}°/{dayWeather.tempMin}°</span>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <AnimatePresence>
