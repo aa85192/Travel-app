@@ -31,7 +31,27 @@ export const WeatherStrip: React.FC<WeatherStripProps> = ({ weather, currentDate
     );
   }
 
-  if (!weather.length) return null;
+  if (!weather.length) {
+    // 計算距離最近可預報日期還有幾天（Open-Meteo 最多 16 天）
+    const today = new Date();
+    const tripDate = new Date(currentDate);
+    const daysUntil = Math.ceil((tripDate.getTime() - today.getTime()) / 86400000);
+    const daysUntilForecast = daysUntil - 16;
+
+    return (
+      <div className="flex items-center space-x-2 bg-white/60 border border-milk-tea-100 rounded-2xl px-4 py-2.5">
+        <span className="text-lg">🔭</span>
+        <div>
+          <p className="text-[10px] font-bold text-milk-tea-500">
+            {daysUntilForecast > 0
+              ? `天氣預報將於 ${daysUntilForecast} 天後開放`
+              : '天氣資料載入中，請稍候'}
+          </p>
+          <p className="text-[9px] text-milk-tea-300">Open-Meteo 提供最近 16 天預報</p>
+        </div>
+      </div>
+    );
+  }
 
   // 找到 currentDate 的 index，前後各取 2 天
   const currentIdx = weather.findIndex(w => w.date === currentDate);
