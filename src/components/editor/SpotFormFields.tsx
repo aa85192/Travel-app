@@ -87,7 +87,8 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
         setGeminiResults(results);
       }
     } catch (e: any) {
-      addToast(`AI 搜尋失敗：${e.message}`, 'error');
+      console.error('[Gemini]', e);
+      addToast(`AI 搜尋失敗：${e?.message ?? '未知錯誤'}`, 'error');
     } finally {
       setIsGeminiSearching(false);
     }
