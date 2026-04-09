@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw } from 'lucide-react';
+import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw, ArrowLeftRight, Loader2 } from 'lucide-react';
 import { Trip, Expense, Participant } from '../types';
 import { calculateSettlement } from '../utils/settlement';
-import { fetchExchangeRates } from '../services/exchangeRateService';
+import { fetchKrwTwdRate, fetchExchangeRates, RateResult } from '../services/exchangeRateService';
 
 interface BudgetProps {
   trip: Trip;
@@ -18,8 +18,10 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   const [activeView, setActiveView] = useState<'expenses' | 'settlement' | 'participants'>('expenses');
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddParticipant, setShowAddParticipant] = useState(false);
+  const [rateData, setRateData] = useState<RateResult | null>(null);
   const [rates, setRates] = useState<{ [key: string]: number } | null>(null);
   const [loadingRates, setLoadingRates] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState<'KRW' | 'TWD'>('KRW');
 
   // New Expense State
   const [newExpense, setNewExpense] = useState<Partial<Expense>>({
@@ -42,12 +44,42 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   useEffect(() => {
     const loadRates = async () => {
       setLoadingRates(true);
-      const r = await fetchExchangeRates('TWD');
-      if (r) setRates(r);
+      const [krwTwd, allRates] = await Promise.all([
+        fetchKrwTwdRate(),
+        fetchExchangeRates('TWD'),
+      ]);
+      if (krwTwd) setRateData(krwTwd);
+      if (allRates) setRates(allRates);
       setLoadingRates(false);
     };
     loadRates();
   }, []);
+
+  // 換算顯示金額（僅顯示用，不修改原始資料）
+  const convertToDisplay = (amount: number, fromCurrency: string): { value: number; label: string } => {
+    if (!rateData) return { value: amount, label: fromCurrency };
+    const from = fromCurrency.toUpperCase();
+    if (from === displayCurrency) return { value: amount, label: displayCurrency };
+    if (from === 'KRW' && displayCurrency === 'TWD') {
+      return { value: amount * rateData.TWD, label: 'TWD' };
+    }
+    if (from === 'TWD' && displayCurrency === 'KRW') {
+      return { value: amount * rateData.KRW, label: 'KRW' };
+    }
+    // 其他幣別不換算
+    return { value: amount, label: from };
+  };
+
+  const refreshRates = async () => {
+    setLoadingRates(true);
+    const [krwTwd, allRates] = await Promise.all([
+      fetchKrwTwdRate(),
+      fetchExchangeRates('TWD'),
+    ]);
+    if (krwTwd) setRateData(krwTwd);
+    if (allRates) setRates(allRates);
+    setLoadingRates(false);
+  };
 
   const handleAddExpense = () => {
     if (!newExpense.title || !newExpense.amount) return;
@@ -140,8 +172,8 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
 
       <main className="px-6">
         {activeView === 'expenses' && (
-          <div className="space-y-4">
-            <button 
+          <div className="space-y-3">
+            <button
               onClick={() => setShowAddExpense(true)}
               className="w-full py-3 bg-milk-tea-500 text-white rounded-xl font-bold shadow-md flex items-center justify-center space-x-2"
             >
@@ -149,23 +181,89 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
               <span>新增支出</span>
             </button>
 
-            {trip.expenses.map(exp => (
-              <div key={exp.id} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-milk-tea-900">{exp.title}</h3>
-                  <p className="text-xs text-milk-tea-400">{exp.date} ・ {trip.participants.find(p => p.id === exp.payerId)?.name} 付款</p>
-                </div>
-                <div className="text-right flex items-center space-x-3">
-                  <div>
-                    <p className="font-mono font-bold text-milk-tea-700">{exp.currency} {exp.amount.toLocaleString()}</p>
-                    <p className="text-[10px] text-milk-tea-400">分給 {exp.splitWithIds.length} 人</p>
+            {/* 匯率換算列 */}
+            <div className="flex items-center justify-between bg-white/70 rounded-xl px-3 py-2.5 border border-milk-tea-100">
+              <div className="flex flex-col">
+                {loadingRates ? (
+                  <div className="flex items-center space-x-1 text-[10px] text-milk-tea-300">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>載入匯率中…</span>
                   </div>
-                  <button onClick={() => handleDeleteExpense(exp.id)} className="text-accent-error opacity-50 hover:opacity-100">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                ) : rateData ? (
+                  <>
+                    <span className="text-[10px] font-mono text-milk-tea-700 font-bold">
+                      1 TWD = {rateData.KRW.toFixed(1)} KRW
+                    </span>
+                    <span className="text-[9px] text-milk-tea-300 flex items-center space-x-1">
+                      <span className={rateData.source === 'visa' ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}>
+                        {rateData.source === 'visa' ? '● Visa 即時匯率' : '○ 市場參考匯率'}
+                      </span>
+                      <span>· {rateData.updatedAt}</span>
+                      <button onClick={refreshRates} className="ml-1 text-milk-tea-300 hover:text-milk-tea-500">
+                        <RefreshCw className="w-2.5 h-2.5" />
+                      </button>
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-milk-tea-300">匯率載入失敗</span>
+                )}
               </div>
-            ))}
+
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={() => setDisplayCurrency(c => c === 'KRW' ? 'TWD' : 'KRW')}
+                disabled={!rateData}
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  rateData
+                    ? displayCurrency === 'KRW'
+                      ? 'bg-[#AAB6FB] text-white shadow-sm'
+                      : 'bg-[#FF6FA3] text-white shadow-sm'
+                    : 'bg-milk-tea-100 text-milk-tea-300 cursor-not-allowed'
+                }`}
+              >
+                <ArrowLeftRight className="w-3 h-3" />
+                <span>換算 {displayCurrency === 'KRW' ? 'TWD' : 'KRW'}</span>
+              </motion.button>
+            </div>
+
+            {trip.expenses.length === 0 && (
+              <div className="text-center py-10 text-milk-tea-300">
+                <Wallet className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                <p>尚無支出紀錄</p>
+              </div>
+            )}
+
+            {trip.expenses.map(exp => {
+              const converted = convertToDisplay(exp.amount, exp.currency);
+              const isConverted = converted.label !== exp.currency.toUpperCase();
+              return (
+                <div key={exp.id} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-milk-tea-900">{exp.title}</h3>
+                    <p className="text-xs text-milk-tea-400">{exp.date} ・ {trip.participants.find(p => p.id === exp.payerId)?.name} 付款</p>
+                  </div>
+                  <div className="text-right flex items-center space-x-3">
+                    <div>
+                      <p className="font-mono font-bold text-milk-tea-700">
+                        {converted.label}{' '}
+                        {converted.label === 'KRW'
+                          ? Math.round(converted.value).toLocaleString()
+                          : converted.value.toFixed(0)}
+                      </p>
+                      {isConverted && (
+                        <p className="text-[9px] text-milk-tea-300 font-mono">
+                          原 {exp.currency} {exp.amount.toLocaleString()}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-milk-tea-400">分給 {exp.splitWithIds.length} 人</p>
+                    </div>
+                    <button onClick={() => handleDeleteExpense(exp.id)} className="text-accent-error opacity-50 hover:opacity-100">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -174,14 +272,14 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
             <div className="bg-accent-cream/30 p-4 rounded-xl border border-accent-cream">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-bold text-milk-tea-800">當前匯率 (1 TWD =)</h3>
-                <button onClick={() => fetchExchangeRates('TWD').then(setRates)} className="text-milk-tea-500">
+                <button onClick={refreshRates} className="text-milk-tea-500">
                   <RefreshCw className={`w-4 h-4 ${loadingRates ? 'animate-spin' : ''}`} />
                 </button>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/50 p-2 rounded-lg">
                   <p className="text-[10px] text-milk-tea-400">KRW</p>
-                  <p className="text-xs font-mono font-bold">{rates?.KRW?.toFixed(2) || '--'}</p>
+                  <p className="text-xs font-mono font-bold">{rateData?.KRW?.toFixed(1) || rates?.KRW?.toFixed(2) || '--'}</p>
                 </div>
                 <div className="bg-white/50 p-2 rounded-lg">
                   <p className="text-[10px] text-milk-tea-400">JPY</p>
