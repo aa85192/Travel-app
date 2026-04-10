@@ -272,9 +272,26 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
             <div className="bg-accent-cream/30 p-4 rounded-xl border border-accent-cream">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="text-sm font-bold text-milk-tea-800">當前匯率 (1 TWD =)</h3>
-                <button onClick={refreshRates} className="text-milk-tea-500">
-                  <RefreshCw className={`w-4 h-4 ${loadingRates ? 'animate-spin' : ''}`} />
-                </button>
+                <div className="flex items-center space-x-2">
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => setDisplayCurrency(c => c === 'KRW' ? 'TWD' : 'KRW')}
+                    disabled={!rateData}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                      rateData
+                        ? displayCurrency === 'KRW'
+                          ? 'bg-[#AAB6FB] text-white shadow-sm'
+                          : 'bg-[#FF6FA3] text-white shadow-sm'
+                        : 'bg-milk-tea-100 text-milk-tea-300 cursor-not-allowed'
+                    }`}
+                  >
+                    <ArrowLeftRight className="w-3 h-3" />
+                    <span>換算 {displayCurrency === 'KRW' ? 'TWD' : 'KRW'}</span>
+                  </motion.button>
+                  <button onClick={refreshRates} className="text-milk-tea-500">
+                    <RefreshCw className={`w-4 h-4 ${loadingRates ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/50 p-2 rounded-lg">
@@ -290,6 +307,14 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                   <p className="text-xs font-mono font-bold">{rates?.USD?.toFixed(4) || '--'}</p>
                 </div>
               </div>
+              {rateData && (
+                <p className="text-[9px] text-milk-tea-300 mt-2 text-center flex items-center justify-center space-x-1">
+                  <span className={rateData.source === 'visa' ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}>
+                    {rateData.source === 'visa' ? '● Visa 即時匯率' : '○ 市場參考匯率'}
+                  </span>
+                  <span>· {rateData.updatedAt}</span>
+                </p>
+              )}
             </div>
 
             {settlements.length === 0 ? (
@@ -301,6 +326,8 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
               settlements.map((s, i) => {
                 const from = trip.participants.find(p => p.id === s.from);
                 const to = trip.participants.find(p => p.id === s.to);
+                const converted = convertToDisplay(s.amount, 'KRW');
+                const isConverted = converted.label !== 'KRW';
                 return (
                   <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -308,8 +335,15 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                       <span className="font-bold">{from?.name}</span>
                     </div>
                     <div className="flex flex-col items-center">
-                      <span className="text-xs text-milk-tea-400 font-mono">{s.amount.toLocaleString()}</span>
-                      <ArrowRight className="w-5 h-5 text-milk-tea-300" />
+                      <span className="text-xs font-bold text-milk-tea-700 font-mono">
+                        {converted.label} {isConverted ? converted.value.toFixed(0) : Math.round(converted.value).toLocaleString()}
+                      </span>
+                      {isConverted && (
+                        <span className="text-[9px] text-milk-tea-300 font-mono">
+                          ≈ KRW {Math.round(s.amount).toLocaleString()}
+                        </span>
+                      )}
+                      <ArrowRight className="w-5 h-5 text-milk-tea-300 mt-0.5" />
                     </div>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold">{to?.name}</span>
