@@ -43,15 +43,35 @@ export async function fetchKakaoCarRoute(
   try {
     const start = `${origin.lng},${origin.lat}`;
     const goal  = `${destination.lng},${destination.lat}`;
-    const res = await fetch(
-      `${WORKER_URL}/kakao/directions?start=${encodeURIComponent(start)}&goal=${encodeURIComponent(goal)}`,
-    );
-    if (!res.ok) return null;
+
+    const url = `${WORKER_URL}/kakao/directions?start=${encodeURIComponent(start)}&goal=${encodeURIComponent(goal)}`;
+    console.log('[kakaoDirectionsService] Fetching:', url);
+
+    const res = await fetch(url);
+    console.log('[kakaoDirectionsService] Response status:', res.status);
+
+    if (!res.ok) {
+      const errData = await res.json();
+      console.error('[kakaoDirectionsService] API error:', errData);
+      return null;
+    }
+
     const data = await res.json();
+    console.log('[kakaoDirectionsService] Response data:', data);
+
     const route = data?.routes?.[0];
-    if (!route || route.result_code !== 0) return null;
+    if (!route) {
+      console.warn('[kakaoDirectionsService] No routes in response');
+      return null;
+    }
+    if (route.result_code !== 0) {
+      console.warn('[kakaoDirectionsService] Non-zero result_code:', route.result_code);
+      return null;
+    }
+
     return route as KakaoRoute;
-  } catch {
+  } catch (e) {
+    console.error('[kakaoDirectionsService] Exception:', e);
     return null;
   }
 }

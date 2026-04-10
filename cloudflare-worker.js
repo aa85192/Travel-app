@@ -129,10 +129,17 @@ export default {
 
       try {
         const kakaoRes = await fetch(kakaoUrl, {
-          headers: { Authorization: `KakaoAK ${env.KAKAO_REST_API_KEY}` },
+          headers: {
+            Authorization: `KakaoAK ${env.KAKAO_REST_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
         });
+        if (!kakaoRes.ok) {
+          const errText = await kakaoRes.text();
+          return json({ error: `Kakao API error: ${kakaoRes.status}`, detail: errText }, kakaoRes.status);
+        }
         const data = await kakaoRes.json();
-        return json(data, kakaoRes.ok ? 200 : kakaoRes.status);
+        return json(data, 200);
       } catch (e) {
         return json({ error: String(e) }, 500);
       }

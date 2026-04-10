@@ -63,19 +63,33 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
 
   // ── 載入 Kakao Maps JS SDK ─────────────────────────────────
   useEffect(() => {
-    if (!JS_KEY) { setSdkError(true); return; }
+    if (!JS_KEY) {
+      console.error('[MapPage] VITE_KAKAO_JS_KEY not set');
+      setSdkError(true);
+      return;
+    }
 
     // 已載入
-    if (window.kakao?.maps) { setSdkReady(true); return; }
+    if (window.kakao?.maps?.Map) {
+      console.log('[MapPage] Kakao Maps SDK already loaded');
+      setSdkReady(true);
+      return;
+    }
 
+    console.log('[MapPage] Loading Kakao Maps SDK...');
     const script = document.createElement('script');
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}&autoload=false`;
+    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}`;
+    script.async = true;
     script.onload = () => {
-      window.kakao.maps.load(() => setSdkReady(true));
+      console.log('[MapPage] Kakao Maps SDK loaded successfully');
+      setSdkReady(true);
     };
-    script.onerror = () => setSdkError(true);
+    script.onerror = () => {
+      console.error('[MapPage] Failed to load Kakao Maps SDK');
+      setSdkError(true);
+    };
     document.head.appendChild(script);
-  }, []);
+  }, [JS_KEY]);
 
   // ── 初始化地圖 + 標記 ─────────────────────────────────────
   useEffect(() => {
@@ -108,12 +122,17 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     if (!req || !sdkReady || IS_TRANSIT(mode)) return;
     if (!kakaoMap.current) return;
 
+    console.log('[MapPage] Fetching route for mode:', mode);
     setRouteLoading(true);
     fetchKakaoCarRoute(req.origin, req.destination).then((route) => {
+      console.log('[MapPage] Route result:', route);
       setCarRoute(route);
       setRouteLoading(false);
 
-      if (!route || !kakaoMap.current) return;
+      if (!route || !kakaoMap.current) {
+        console.warn('[MapPage] No route or map not ready');
+        return;
+      }
 
       // 畫路線折線
       const allPoints: any[] = [];
