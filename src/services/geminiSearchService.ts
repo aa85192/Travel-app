@@ -54,8 +54,8 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     throw new Error('GEMINI_API_KEY 未設定，請確認 GitHub Secrets 有加入此變數');
   }
 
-  // 極簡 prompt：符號語法節省 token，k=韓文官方名, z=繁中名
-  const prompt = `韓國景點/店:「${query}」→JSON:[{"k":"韓文官方名","z":"繁中名"}]≤5筆,純JSON`;
+  // 精簡 prompt：用知識庫找真實景點，含容錯，k=韓文官方名, z=繁中名
+  const prompt = `韓國旅遊知識:輸入「${query}」(含錯字)→依記憶找≤5個真實存在的韓國景點/餐廳/咖啡廳/店家→JSON:[{"k":"韓文官方名","z":"繁中名"}],純JSON`;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res = await fetch(
