@@ -201,6 +201,34 @@ export function openInNaverMap(place: { lat: number; lng: number; name: string }
 }
 
 /**
+ * 在 Kakao Map 開啟路線（深層連結，不需 API key）
+ * URL 格式：https://map.kakao.com/link/by/{mode}/{name},{lat},{lng}/{name},{lat},{lng}
+ * mode: car | traffic(大眾運輸) | walk | bicycle
+ */
+export function openKakaoMapDirections(
+  origin: { lat: number; lng: number; name: string },
+  destination: { lat: number; lng: number; name: string },
+  mode: 'car' | 'traffic' | 'walk' | 'bicycle' = 'traffic'
+): void {
+  const from = `${encodeURIComponent(origin.name)},${origin.lat},${origin.lng}`;
+  const to   = `${encodeURIComponent(destination.name)},${destination.lat},${destination.lng}`;
+  const webUrl = `https://map.kakao.com/link/by/${mode}/${from}/${to}`;
+  triggerAnchorClick(webUrl, true);
+}
+
+/**
+ * 在 NaverMap 用關鍵字搜尋（不需座標）
+ * 適合用於 AI 產生的韓文店名搜尋
+ */
+export function searchInNaverMap(query: string): void {
+  const encodedQuery = encodeURIComponent(query);
+  const iosScheme = `nmap://search?query=${encodedQuery}&appname=com.milkteatravel`;
+  const webFallback = `https://map.naver.com/v5/search/${encodedQuery}`;
+  const androidIntent = buildNaverIntentUrl(iosScheme, webFallback);
+  openApp({ iosScheme, androidIntent, webFallback });
+}
+
+/**
  * 在 Naver Map 開啟路線導航（大眾運輸）
  * 起點由 Naver Map 自動使用當前位置
  */
