@@ -7,6 +7,7 @@ import { parseNaverMapLink } from '../../services/naverLinkParser';
 import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
 import { searchSpotsWithGemini, GeminiSpotResult } from '../../services/geminiSearchService';
 import { fetchWikipediaPhoto } from '../../services/wikipediaPhotoService';
+import { searchInNaverMap } from '../../utils/deepLink';
 import { useUIStore } from '../../stores/uiStore';
 import { fetchExchangeRates } from '../../services/exchangeRateService';
 
@@ -94,35 +95,10 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     }
   };
 
-  const handleSelectGeminiPlace = async (place: GeminiSpotResult) => {
-    const newData: Partial<Spot> = {
-      ...formData,
-      name: place.nameZh,
-      nameLocal: place.nameKo,
-      lat: place.lat,
-      lng: place.lng,
-      address: place.address || formData.address,
-      category: (place.category as SpotCategory) || formData.category,
-    };
-    setFormData(newData);
+  const handleSelectGeminiPlace = (place: GeminiSpotResult) => {
     setGeminiResults([]);
     setSearchQuery('');
-
-    // 嘗試自動抓照片
-    setIsFetchingPhoto(true);
-    try {
-      const photoUrl = await fetchWikipediaPhoto(place.nameKo, place.nameEn || place.nameZh);
-      if (photoUrl) {
-        setFormData({ ...newData, photo: photoUrl });
-        addToast(`✅ 已選擇「${place.nameZh}」並取得照片`, 'success');
-      } else {
-        addToast(`✅ 已選擇「${place.nameZh}」`, 'success');
-      }
-    } catch {
-      addToast(`✅ 已選擇「${place.nameZh}」`, 'success');
-    } finally {
-      setIsFetchingPhoto(false);
-    }
+    searchInNaverMap(place.nameKo);
   };
 
   const handleSearch = async () => {
@@ -280,7 +256,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             {geminiResults.length > 0 && (
               <div className="rounded-xl border border-[#AAB6FB] overflow-hidden divide-y divide-[#E8ECFF] bg-white shadow-md">
                 <div className="px-3 py-1.5 bg-[#E8ECFF] flex items-center justify-between">
-                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ AI 建議景點（點選套用）</span>
+                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ 點選景點名，直接在 Naver Map 搜尋</span>
                   <button type="button" onClick={() => setGeminiResults([])} className="text-[#8896F5] hover:text-[#2D3A8A]">
                     <X size={12} />
                   </button>
@@ -290,13 +266,13 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                     key={i}
                     type="button"
                     onClick={() => handleSelectGeminiPlace(place)}
-                    className="w-full text-left px-3 py-2.5 hover:bg-[#E8ECFF]/50 transition-colors"
+                    className="w-full text-left px-3 py-2.5 hover:bg-[#E8ECFF]/50 transition-colors flex items-center justify-between"
                   >
-                    <p className="text-sm font-black text-milk-tea-900">{place.nameKo}</p>
-                    {place.nameZh && (
-                      <p className="text-[10px] font-bold text-milk-tea-500 mt-0.5">{place.nameZh}</p>
-                    )}
-                    <p className="text-[10px] text-milk-tea-300 mt-0.5 leading-snug">{place.description}</p>
+                    <div>
+                      <p className="text-sm font-black text-milk-tea-900">{place.nameZh}</p>
+                      <p className="text-[11px] text-milk-tea-400 mt-0.5">{place.nameKo}</p>
+                    </div>
+                    <ExternalLink size={12} className="text-[#8896F5] flex-shrink-0 ml-2" />
                   </button>
                 ))}
               </div>

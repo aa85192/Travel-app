@@ -106,7 +106,12 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
 
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <h3 className="text-base font-bold text-milk-tea-900 truncate font-display">{spot.name}</h3>
+            <div className="flex-1 min-w-0 mr-2">
+              <h3 className="text-base font-bold text-milk-tea-900 truncate font-display">{spot.name}</h3>
+              {spot.nameLocal && (
+                <p className="text-[11px] text-milk-tea-300 truncate -mt-0.5">{spot.nameLocal}</p>
+              )}
+            </div>
             
             <div className="relative">
               <button 

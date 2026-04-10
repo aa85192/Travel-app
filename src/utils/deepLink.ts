@@ -201,6 +201,18 @@ export function openInNaverMap(place: { lat: number; lng: number; name: string }
 }
 
 /**
+ * 用關鍵字在 Naver Map 搜尋（不需座標）
+ * 適合用於 AI 產生的韓文店名搜尋
+ */
+export function searchInNaverMap(query: string): void {
+  const encodedQuery = encodeURIComponent(query);
+  const iosScheme = `nmap://search?query=${encodedQuery}&appname=com.milkteatravel`;
+  const webFallback = `https://map.naver.com/v5/search/${encodedQuery}`;
+  const androidIntent = buildNaverIntentUrl(iosScheme, webFallback);
+  openApp({ iosScheme, androidIntent, webFallback });
+}
+
+/**
  * 在 Naver Map 開啟路線導航（大眾運輸）
  * 起點由 Naver Map 自動使用當前位置
  */
