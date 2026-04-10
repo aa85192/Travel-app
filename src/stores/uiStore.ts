@@ -9,17 +9,27 @@ interface EditingContext {
   spotId?: string;
 }
 
+export interface MapRouteRequest {
+  origin: { lat: number; lng: number; name: string };
+  destination: { lat: number; lng: number; name: string };
+  mode: 'walking' | 'bus' | 'subway' | 'taxi' | 'uber';
+}
+
 interface UIState {
   activeModal: ModalType;
   editingContext: EditingContext | null;
   reorderMode: ReorderMode;
   toasts: { id: string; message: string; type: 'success' | 'error' | 'warning' }[];
-  
+  navigateTo: string | null;
+  mapRouteRequest: MapRouteRequest | null;
+
   openModal: (type: ModalType, context: EditingContext) => void;
   closeModal: () => void;
   setReorderMode: (mode: ReorderMode) => void;
   addToast: (message: string, type?: 'success' | 'error' | 'warning') => void;
   removeToast: (id: string) => void;
+  setNavigateTo: (tab: string | null) => void;
+  setMapRoute: (req: MapRouteRequest | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -27,10 +37,14 @@ export const useUIStore = create<UIState>((set) => ({
   editingContext: null,
   reorderMode: null,
   toasts: [],
+  navigateTo: null,
+  mapRouteRequest: null,
 
   openModal: (type, context) => set({ activeModal: type, editingContext: context }),
   closeModal: () => set({ activeModal: null, editingContext: null }),
   setReorderMode: (mode) => set({ reorderMode: mode }),
+  setNavigateTo: (tab) => set({ navigateTo: tab }),
+  setMapRoute: (req) => set({ mapRouteRequest: req }),
   addToast: (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     set((state) => ({

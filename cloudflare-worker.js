@@ -113,6 +113,31 @@ export default {
       });
     }
 
+    // GET /kakao/directions → Kakao Mobility 路線代理
+    if (path === '/kakao/directions') {
+      const start    = url.searchParams.get('start');   // "lng,lat"
+      const goal     = url.searchParams.get('goal');    // "lng,lat"
+      const priority = url.searchParams.get('priority') || 'RECOMMEND';
+
+      if (!start || !goal) return json({ error: 'Missing start or goal' }, 400);
+      if (!env.KAKAO_REST_API_KEY) return json({ error: 'KAKAO_REST_API_KEY not configured' }, 503);
+
+      const kakaoUrl =
+        `https://apis-navi.kakaomobility.com/v1/directions` +
+        `?start=${encodeURIComponent(start)}&goal=${encodeURIComponent(goal)}` +
+        `&priority=${priority}`;
+
+      try {
+        const kakaoRes = await fetch(kakaoUrl, {
+          headers: { Authorization: `KakaoAK ${env.KAKAO_REST_API_KEY}` },
+        });
+        const data = await kakaoRes.json();
+        return json(data, kakaoRes.ok ? 200 : kakaoRes.status);
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
     // GET / → 匯率
     const from = (url.searchParams.get('from') || 'TWD').toUpperCase();
     const to   = (url.searchParams.get('to')   || 'KRW').toUpperCase();

@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { Home } from './pages/Home';
 import { TripOverview } from './pages/TripOverview';
 import { Budget } from './pages/Budget';
+import { MapPage } from './pages/MapPage';
 import { BottomNav } from './components/layout/BottomNav';
 import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate';
 import { useTripStore } from './stores/tripStore';
@@ -14,7 +15,15 @@ export default function App() {
   const [authed, setAuthed] = React.useState<boolean>(isAuthenticated);
   const [activeTab, setActiveTab] = React.useState('home');
   const { trip, setTrip } = useTripStore();
-  const { toasts } = useUIStore();
+  const { toasts, navigateTo, setNavigateTo } = useUIStore();
+
+  // 接收來自子元件（如 TransitCard）的跨層導航請求
+  React.useEffect(() => {
+    if (navigateTo) {
+      setActiveTab(navigateTo);
+      setNavigateTo(null);
+    }
+  }, [navigateTo, setNavigateTo]);
 
   // 未登入 → 顯示密碼輸入頁
   if (!authed) {
@@ -64,9 +73,21 @@ export default function App() {
             <Budget trip={trip} onUpdateTrip={setTrip} onBack={() => setActiveTab('home')} />
           </motion.div>
         )}
-        {(activeTab === 'map' || activeTab === 'settings') && (
+        {activeTab === 'map' && (
           <motion.div
-            key="placeholder"
+            key="map"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25 }}
+            className="h-screen"
+          >
+            <MapPage onBack={() => setActiveTab('itinerary')} />
+          </motion.div>
+        )}
+        {activeTab === 'settings' && (
+          <motion.div
+            key="settings"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -76,9 +97,7 @@ export default function App() {
               <span className="text-4xl">🚧</span>
             </div>
             <h2 className="text-xl font-bold text-milk-tea-900">功能開發中</h2>
-            <p className="text-sm text-milk-tea-500 mt-2">
-              「{activeTab === 'map' ? '地圖' : '設定'}」功能即將上線，敬請期待！
-            </p>
+            <p className="text-sm text-milk-tea-500 mt-2">「設定」功能即將上線，敬請期待！</p>
             <button
               onClick={() => setActiveTab('home')}
               className="mt-6 px-8 py-2 bg-milk-tea-500 text-white rounded-full font-bold shadow-md"

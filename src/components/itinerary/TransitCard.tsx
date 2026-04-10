@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Navigation, Car, ExternalLink, Loader2 } from 'lucide-react';
+import { Navigation, Car, ExternalLink, Loader2, Map } from 'lucide-react';
 import { Transit, TransportMode } from '../../types';
 import { TransportIcon } from '../common/TransportIcon';
 import { openNaverMapDirections, openUberToDestination, openKakaoMapDirections } from '../../utils/deepLink';
 import { useTripStore } from '../../stores/tripStore';
+import { useUIStore } from '../../stores/uiStore';
 import { fetchWalkingRoute, fetchDrivingRoute } from '../../services/osrmService';
 
 // Kakao Map 模式對應
@@ -58,6 +59,7 @@ interface LiveEstimate {
 export const TransitCard: React.FC<TransitCardProps> = ({
   transit,
   dayNumber,
+  originName,
   destinationName,
   originCoords,
   destinationCoords,
@@ -65,6 +67,16 @@ export const TransitCard: React.FC<TransitCardProps> = ({
   if (!transit) return null;
 
   const updateTransitMode = useTripStore((s) => s.updateTransitMode);
+  const { setMapRoute, setNavigateTo } = useUIStore();
+
+  const openMapPage = () => {
+    setMapRoute({
+      origin:      { ...originCoords,      name: originName },
+      destination: { ...destinationCoords, name: destinationName },
+      mode: transit.selectedMode,
+    });
+    setNavigateTo('map');
+  };
   const modes: TransportMode[] = ['walking', 'bus', 'subway', 'taxi', 'uber'];
 
   // 從 OSRM 取得的即時路線（key = TransportMode）
@@ -160,56 +172,63 @@ export const TransitCard: React.FC<TransitCardProps> = ({
           </div>
         </div>
 
-        {/* 公車/地鐵 → Kakao Map 大眾運輸（主要按鈕） */}
+        {/* 查路線按鈕（主要：開啟地圖頁） */}
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={openMapPage}
+          className="w-full py-2.5 bg-milk-tea-500 text-white rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm"
+        >
+          <Map className="w-4 h-4" />
+          <span>查路線</span>
+        </motion.button>
+
+        {/* 公車/地鐵 → Kakao Map（快速外開） */}
         {(transit.selectedMode === 'bus' || transit.selectedMode === 'subway') ? (
-          <>
+          <div className="flex space-x-2">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => openKakaoMapDirections(
-                { ...originCoords, name: '' },
+                { ...originCoords, name: originName },
                 { ...destinationCoords, name: destinationName },
-                'traffic'
+                KAKAO_MODE[transit.selectedMode] ?? 'traffic',
               )}
-              className="w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm transition-colors text-white"
+              className="flex-1 py-2 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 shadow-sm"
               style={{ backgroundColor: '#FAE100', color: '#3C1E1E' }}
             >
-              <Navigation className="w-4 h-4" />
-              <span>在 Kakao Map 查詢大眾運輸</span>
-              <ExternalLink className="w-3 h-3 opacity-70" />
+              <Navigation className="w-3.5 h-3.5" />
+              <span>Kakao Map</span>
+              <ExternalLink className="w-3 h-3 opacity-60" />
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
-              className="w-full py-2 bg-milk-tea-100 text-milk-tea-600 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition-colors"
+              className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-600 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5"
             >
               <Navigation className="w-3.5 h-3.5" />
-              <span>Naver Map 路線</span>
+              <span>Naver Map</span>
             </motion.button>
-          </>
+          </div>
         ) : (
-          <>
-            {/* 步行/計程車/Uber → Naver Map 主要按鈕 */}
+          <div className="flex space-x-2">
             <motion.button
               whileTap={{ scale: 0.97 }}
               onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
-              className="w-full py-2.5 bg-milk-tea-500 text-white rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm hover:bg-milk-tea-600 transition-colors"
+              className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-600 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5"
             >
-              <Navigation className="w-4 h-4" />
-              <span>在 Naver Map 查詢路線</span>
-              <ExternalLink className="w-3 h-3 opacity-70" />
+              <Navigation className="w-3.5 h-3.5" />
+              <span>Naver Map</span>
             </motion.button>
-            {/* 計程車/Uber 也顯示 Uber 按鈕 */}
             {(transit.selectedMode === 'taxi' || transit.selectedMode === 'uber') && (
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={() => openUberToDestination({ ...destinationCoords, name: destinationName })}
-                className="w-full py-2 bg-[#2D2030] text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
+                className="flex-1 py-2 bg-[#2D2030] text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5"
               >
                 <Car className="w-3.5 h-3.5" />
-                <span>Uber 叫車前往</span>
+                <span>Uber</span>
               </motion.button>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
