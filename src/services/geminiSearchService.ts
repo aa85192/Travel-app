@@ -14,39 +14,43 @@ export interface GeminiSpotResult {
   category?: 'attraction' | 'restaurant' | 'cafe' | 'shopping' | 'hotel' | 'activity' | 'other';
 }
 
-/** 從 Gemini 錯誤訊息中解析建議的等待秒數（毫秒） */
-function parseRetryDelayMs(message: string): number {
-  const match = message.match(/retry in ([\d.]+)s/i);
-  if (match) {
-    const seconds = parseFloat(match[1]);
-    // Cap at 30 seconds to keep UX reasonable
-    return Math.min(Math.ceil(seconds) * 1000, 30_000);
-  }
-  return 5_000; // default 5s fallback
-}
-
-function isRateLimitError(message: string): boolean {
+/**
+ * 429 TooManyRequests — 配額/速率耗盡，不重試（重試只會再產生更多 429）
+ * 503 ServiceUnavailable — 伺服器暫時過載，值得重試
+ */
+function isQuotaExceeded(status: number, message: string): boolean {
+  if (status === 429) return true;
   const lower = message.toLowerCase();
   return (
     lower.includes('quota') ||
     lower.includes('rate limit') ||
     lower.includes('resource_exhausted') ||
-    lower.includes('retry in') ||
-    lower.includes('high demand') ||
-    lower.includes('temporarily') ||
-    lower.includes('try again later') ||
-    lower.includes('overloaded') ||
-    lower.includes('unavailable')
+    lower.includes('too many requests')
   );
 }
 
-/** 根據重試次數計算指數退避延遲（毫秒） */
-function backoffDelayMs(attempt: number, parsedDelayMs: number): number {
-  // 若 API 有提供建議等待時間則優先使用，否則用指數退避 5s / 10s / 20s
-  if (parsedDelayMs > 0) return parsedDelayMs;
+function isTransientError(status: number, message: string): boolean {
+  if (status === 503) return true;
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('high demand') ||
+    lower.includes('try again later') ||
+    lower.includes('overloaded') ||
+    lower.includes('service unavailable') ||
+    lower.includes('temporarily')
+  );
+}
+
+/** 從 Gemini 錯誤訊息中解析建議的等待秒數（毫秒），無則用指數退避 */
+function retryDelayMs(attempt: number, message: string): number {
+  const match = message.match(/retry in ([\d.]+)s/i);
+  if (match) {
+    return Math.min(Math.ceil(parseFloat(match[1])) * 1000, 30_000);
+  }
   return Math.min(5_000 * Math.pow(2, attempt), 30_000);
 }
 
+// 只對 503 等暫時性錯誤重試，最多 2 次
 const MAX_RETRIES = 2;
 
 export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotResult[]> {
@@ -71,8 +75,6 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
 
 只回傳 JSON 陣列，不含任何 markdown 或其他文字。`;
 
-  let lastErrorMessage = '';
-
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
@@ -88,15 +90,20 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       const message: string = err?.error?.message ?? `HTTP ${res.status}`;
-      lastErrorMessage = message;
 
-      if (isRateLimitError(message) && attempt < MAX_RETRIES) {
-        const delayMs = backoffDelayMs(attempt, parseRetryDelayMs(message));
-        await new Promise((r) => setTimeout(r, delayMs));
+      // 429：配額耗盡，重試沒用，立即告知使用者
+      if (isQuotaExceeded(res.status, message)) {
+        throw new Error('AI 搜尋配額已用完，請明天再試或改用 Naver Map 搜尋');
+      }
+
+      // 503 等暫時性錯誤：退避後重試
+      if (isTransientError(res.status, message) && attempt < MAX_RETRIES) {
+        await new Promise((r) => setTimeout(r, retryDelayMs(attempt, message)));
         continue;
       }
 
-      if (isRateLimitError(message)) {
+      // 503 重試耗盡
+      if (isTransientError(res.status, message)) {
         throw new Error('AI 服務目前繁忙，請稍後再試');
       }
 
@@ -121,9 +128,5 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     return parsed.slice(0, 3) as GeminiSpotResult[];
   }
 
-  // All retries exhausted
-  if (isRateLimitError(lastErrorMessage)) {
-    throw new Error('AI 服務目前繁忙，請稍後再試');
-  }
-  throw new Error(lastErrorMessage || 'AI 搜尋失敗，請稍後再試');
+  throw new Error('AI 服務目前繁忙，請稍後再試');
 }
