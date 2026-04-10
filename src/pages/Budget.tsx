@@ -349,12 +349,14 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
       {/* Add Expense Modal */}
       <AnimatePresence>
         {showAddExpense && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm">
-            <motion.div 
+          <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 backdrop-blur-sm">
+            <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="bg-white w-full max-w-md rounded-t-3xl p-6 pb-10"
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white w-full max-w-md rounded-t-3xl p-6 overflow-y-auto max-h-dvh"
+              style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">新增支出</h2>
@@ -427,7 +429,7 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
       {/* Add Participant Modal */}
       <AnimatePresence>
         {showAddParticipant && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
