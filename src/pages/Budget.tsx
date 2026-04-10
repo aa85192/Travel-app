@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw, ArrowLeftRight, Loader2 } from 'lucide-react';
+import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw, ArrowLeftRight, Loader2, Pencil } from 'lucide-react';
 import { Trip, Expense, Participant } from '../types';
 import { calculateSettlement } from '../utils/settlement';
 import { fetchKrwTwdRate, fetchExchangeRates, RateResult } from '../services/exchangeRateService';
@@ -40,6 +40,9 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
     emoji: EMOJIS[0],
     color: COLORS[0]
   });
+
+  // Edit Participant State
+  const [editingParticipant, setEditingParticipant] = useState<{ id: string; name: string; emoji: string; color: string } | null>(null);
 
   useEffect(() => {
     const loadRates = async () => {
@@ -115,6 +118,24 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
     });
     setShowAddParticipant(false);
     setNewParticipant({ name: '', emoji: EMOJIS[0], color: COLORS[0] });
+  };
+
+  const handleEditParticipant = () => {
+    if (!editingParticipant) return;
+    onUpdateTrip({
+      ...trip,
+      participants: trip.participants.map(p =>
+        p.id === editingParticipant.id ? { ...p, ...editingParticipant } : p
+      )
+    });
+    setEditingParticipant(null);
+  };
+
+  const handleDeleteParticipant = (id: string) => {
+    onUpdateTrip({
+      ...trip,
+      participants: trip.participants.filter(p => p.id !== id)
+    });
   };
 
   const handleDeleteExpense = (id: string) => {
@@ -368,11 +389,30 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
 
             <div className="grid grid-cols-2 gap-4">
               {trip.participants.map(p => (
-                <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex flex-col items-center">
-                  <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2" style={{ backgroundColor: `${p.color}20`, border: `2px solid ${p.color}` }}>
+                <div key={p.id} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex flex-col items-center relative">
+                  {/* 刪除按鈕 */}
+                  <button
+                    onClick={() => handleDeleteParticipant(p.id)}
+                    className="absolute top-2 right-2 text-milk-tea-200 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  {/* 頭像（點選開編輯） */}
+                  <button
+                    onClick={() => setEditingParticipant({ id: p.id, name: p.name, emoji: p.emoji, color: p.color })}
+                    className="w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 active:scale-95 transition-transform"
+                    style={{ backgroundColor: `${p.color}20`, border: `2px solid ${p.color}` }}
+                  >
                     {p.emoji}
-                  </div>
-                  <span className="font-bold text-milk-tea-900">{p.name}</span>
+                  </button>
+                  <span className="font-bold text-milk-tea-900 text-sm">{p.name}</span>
+                  {/* 編輯按鈕 */}
+                  <button
+                    onClick={() => setEditingParticipant({ id: p.id, name: p.name, emoji: p.emoji, color: p.color })}
+                    className="flex items-center space-x-0.5 text-[10px] text-milk-tea-300 hover:text-milk-tea-500 mt-1 transition-colors"
+                  >
+                    <Pencil size={10} /><span>編輯</span>
+                  </button>
                 </div>
               ))}
             </div>
@@ -496,6 +536,49 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                 <div className="flex space-x-2 pt-4">
                   <button onClick={() => setShowAddParticipant(false)} className="flex-1 py-3 text-milk-tea-400 font-bold">取消</button>
                   <button onClick={handleAddParticipant} className="flex-1 py-3 bg-milk-tea-500 text-white rounded-xl font-bold shadow-md">確認</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Participant Modal */}
+      <AnimatePresence>
+        {editingParticipant && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-sm rounded-3xl p-6"
+            >
+              <h2 className="text-xl font-bold mb-6">編輯旅伴</h2>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="旅伴名稱"
+                  value={editingParticipant.name}
+                  onChange={e => setEditingParticipant({ ...editingParticipant, name: e.target.value })}
+                  className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl p-3"
+                />
+                <div>
+                  <label className="text-xs font-bold text-milk-tea-400 block mb-2">選擇頭像</label>
+                  <div className="grid grid-cols-6 gap-2 max-h-32 overflow-y-auto p-1">
+                    {EMOJIS.map(e => (
+                      <button
+                        key={e}
+                        onClick={() => setEditingParticipant({ ...editingParticipant, emoji: e })}
+                        className={`text-xl p-2 rounded-lg transition-all ${editingParticipant.emoji === e ? 'bg-milk-tea-100 scale-110' : 'hover:bg-milk-tea-50'}`}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex space-x-2 pt-4">
+                  <button onClick={() => setEditingParticipant(null)} className="flex-1 py-3 text-milk-tea-400 font-bold">取消</button>
+                  <button onClick={handleEditParticipant} className="flex-1 py-3 bg-milk-tea-500 text-white rounded-xl font-bold shadow-md">確認</button>
                 </div>
               </div>
             </motion.div>

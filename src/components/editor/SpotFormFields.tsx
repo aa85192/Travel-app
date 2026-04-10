@@ -211,29 +211,31 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
 
         {inputMode === 'search' && (
           <div className="space-y-2">
-            <div className="flex space-x-2">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setGeminiResults([]);
-                  setSearchResults([]);
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="輸入地點名稱（中文、韓文、英文皆可）"
-                className="flex-1 px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
-              />
+            {/* 搜尋輸入框 — 獨立一行不擠壓 */}
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setGeminiResults([]);
+                setSearchResults([]);
+              }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="輸入地點名稱（中文、韓文、英文皆可）"
+              className="w-full px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
+            />
+            {/* 三顆按鈕平均分配第二行 */}
+            <div className="grid grid-cols-3 gap-2">
               {/* AI 找韓文景點名 */}
               <button
                 type="button"
                 onClick={handleGeminiSearch}
                 disabled={isGeminiSearching || !searchQuery.trim()}
                 title="AI 從知識庫找韓文景點名"
-                className="px-3 py-2 bg-[#E8ECFF] text-[#2D3A8A] rounded-xl text-xs font-black disabled:opacity-50 transition-all flex items-center space-x-1 hover:bg-[#AAB6FB] hover:text-white border border-[#AAB6FB]"
+                className="py-2 bg-[#E8ECFF] text-[#2D3A8A] rounded-xl text-xs font-black disabled:opacity-50 transition-all flex items-center justify-center space-x-1 hover:bg-[#AAB6FB] hover:text-white border border-[#AAB6FB]"
               >
-                {isGeminiSearching ? <Loader2 size={13} className="animate-spin" /> : <span>🇰🇷 韓</span>}
+                {isGeminiSearching ? <Loader2 size={13} className="animate-spin" /> : <><span>🇰🇷</span><span>AI</span></>}
               </button>
               {/* 地點搜尋（可選後自動匯入） */}
               <button
@@ -241,9 +243,9 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                 onClick={handleSearch}
                 disabled={isSearching || !searchQuery.trim()}
                 title="搜尋地點並自動匯入"
-                className="px-3 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
+                className="py-2 bg-milk-tea-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all flex items-center justify-center space-x-1"
               >
-                {isSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                {isSearching ? <Loader2 size={14} className="animate-spin" /> : <><Search size={14} /><span>搜尋</span></>}
               </button>
               {/* 在 NaverMap 搜尋 */}
               <button
@@ -251,9 +253,9 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                 onClick={() => { if (searchQuery.trim()) searchInNaverMap(searchQuery); }}
                 disabled={!searchQuery.trim()}
                 title="在 Naver Map 搜尋"
-                className="px-3 py-2 bg-green-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
+                className="py-2 bg-green-500 text-white rounded-xl text-xs font-bold disabled:opacity-50 transition-all flex items-center justify-center space-x-1"
               >
-                <Map size={16} />
+                <Map size={14} /><span>地圖</span>
               </button>
             </div>
 
