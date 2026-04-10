@@ -14,6 +14,29 @@ export interface GeminiSpotResult {
   category?: 'attraction' | 'restaurant' | 'cafe' | 'shopping' | 'hotel' | 'activity' | 'other';
 }
 
+/** 從 Gemini 錯誤訊息中解析建議的等待秒數（毫秒） */
+function parseRetryDelayMs(message: string): number {
+  const match = message.match(/retry in ([\d.]+)s/i);
+  if (match) {
+    const seconds = parseFloat(match[1]);
+    // Cap at 30 seconds to keep UX reasonable
+    return Math.min(Math.ceil(seconds) * 1000, 30_000);
+  }
+  return 5_000; // default 5s fallback
+}
+
+function isRateLimitError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('quota') ||
+    lower.includes('rate limit') ||
+    lower.includes('resource_exhausted') ||
+    lower.includes('retry in')
+  );
+}
+
+const MAX_RETRIES = 2;
+
 export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotResult[]> {
   const apiKey = process.env.GEMINI_API_KEY;
 
@@ -36,36 +59,59 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
 
 只回傳 JSON 陣列，不含任何 markdown 或其他文字。`;
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-      }),
+  let lastErrorMessage = '';
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const message: string = err?.error?.message ?? `HTTP ${res.status}`;
+      lastErrorMessage = message;
+
+      if (isRateLimitError(message) && attempt < MAX_RETRIES) {
+        const delayMs = parseRetryDelayMs(message);
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+
+      if (isRateLimitError(message)) {
+        throw new Error('AI 搜尋配額暫時用完，請稍後再試');
+      }
+
+      throw new Error(message);
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message ?? `HTTP ${res.status}`);
+    const data = await res.json();
+    const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+    if (!text) throw new Error('Gemini 回傳空內容');
+
+    // 清除 markdown code block
+    const clean = text.replace(/```json?\n?/gi, '').replace(/```/g, '').trim();
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error(`JSON 解析失敗：${clean.slice(0, 100)}`);
+    }
+
+    if (!Array.isArray(parsed)) throw new Error('回傳格式不是陣列');
+    return parsed.slice(0, 3) as GeminiSpotResult[];
   }
 
-  const data = await res.json();
-  const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
-  if (!text) throw new Error('Gemini 回傳空內容');
-
-  // 清除 markdown code block
-  const clean = text.replace(/```json?\n?/gi, '').replace(/```/g, '').trim();
-
-  let parsed: any;
-  try {
-    parsed = JSON.parse(clean);
-  } catch {
-    throw new Error(`JSON 解析失敗：${clean.slice(0, 100)}`);
+  // All retries exhausted
+  if (isRateLimitError(lastErrorMessage)) {
+    throw new Error('AI 搜尋配額暫時用完，請稍後再試');
   }
-
-  if (!Array.isArray(parsed)) throw new Error('回傳格式不是陣列');
-  return parsed.slice(0, 3) as GeminiSpotResult[];
+  throw new Error(lastErrorMessage || 'AI 搜尋失敗，請稍後再試');
 }
