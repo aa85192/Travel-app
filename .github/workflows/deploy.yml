@@ -37,6 +37,7 @@ jobs:
           VITE_NAVER_CLIENT_ID: ${{ secrets.VITE_NAVER_CLIENT_ID }}
           VITE_NAVER_CLIENT_SECRET: ${{ secrets.VITE_NAVER_CLIENT_SECRET }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_KAKAO_JS_KEY: ${{ secrets.VITE_KAKAO_JS_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
