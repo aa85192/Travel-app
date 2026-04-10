@@ -54,14 +54,8 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     throw new Error('GEMINI_API_KEY 未設定，請確認 GitHub Secrets 有加入此變數');
   }
 
-  const prompt = `你是韓國旅遊助手。用戶輸入："${query}"
-
-找出最符合的韓國景點或店家（最多5個）。
-回傳 JSON 陣列，每個物件只需包含：
-- nameKo: 正確韓文名稱（用於 Naver Map 關鍵字搜尋，盡量精確）
-- nameZh: 繁體中文名稱
-
-只回傳 JSON 陣列，不含任何 markdown 或其他文字。`;
+  // 極簡 prompt：符號語法節省 token，k=韓文官方名, z=繁中名
+  const prompt = `韓國景點/店:「${query}」→JSON:[{"k":"韓文官方名","z":"繁中名"}]≤5筆,純JSON`;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res = await fetch(
@@ -116,7 +110,11 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     }
 
     if (!Array.isArray(parsed)) throw new Error('回傳格式不是陣列');
-    return parsed.slice(0, 5) as GeminiSpotResult[];
+    // 支援壓縮格式 {k, z} 和完整格式 {nameKo, nameZh}
+    return parsed.slice(0, 5).map((item: any) => ({
+      nameKo: item.k ?? item.nameKo ?? '',
+      nameZh: item.z ?? item.nameZh ?? '',
+    })) as GeminiSpotResult[];
   }
 
   throw new Error('AI 服務目前繁忙，請稍後再試');

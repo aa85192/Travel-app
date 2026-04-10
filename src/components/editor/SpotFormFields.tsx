@@ -4,7 +4,6 @@ import { Spot, SpotCategory } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
-import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
 import { searchSpotsWithGemini, GeminiSpotResult } from '../../services/geminiSearchService';
 import { fetchWikipediaPhoto } from '../../services/wikipediaPhotoService';
 import { searchInNaverMap } from '../../utils/deepLink';
@@ -21,8 +20,6 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
   const [isParsing, setIsParsing] = useState(false);
   const [rates, setRates] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [geminiResults, setGeminiResults] = useState<GeminiSpotResult[]>([]);
   const [isGeminiSearching, setIsGeminiSearching] = useState(false);
   const [isFetchingPhoto, setIsFetchingPhoto] = useState(false);
@@ -79,7 +76,6 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     if (!searchQuery.trim()) return;
     setIsGeminiSearching(true);
     setGeminiResults([]);
-    setSearchResults([]);
     try {
       const results = await searchSpotsWithGemini(searchQuery);
       if (results.length === 0) {
@@ -95,59 +91,11 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     }
   };
 
+  // AI 結果點選 → 貼韓文名到搜尋欄，讓使用者自行按 🔍 開 NaverMap
   const handleSelectGeminiPlace = (place: GeminiSpotResult) => {
+    setSearchQuery(place.nameKo);
     setGeminiResults([]);
-    setSearchQuery('');
-    searchInNaverMap(place.nameKo);
-  };
-
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    setIsSearching(true);
-    setSearchResults([]);
-    try {
-      const results = await searchPlaces(searchQuery);
-      if (results.length === 0) {
-        addToast('找不到相關地點，試試韓文或英文名稱', 'error');
-      }
-      setSearchResults(results);
-    } catch {
-      addToast('搜尋失敗，請稍後再試', 'error');
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleSelectPlace = async (place: PlaceResult) => {
-    const newData = {
-      ...formData,
-      name: place.name,
-      address: place.address,
-      lat: place.lat,
-      lng: place.lng,
-    };
-    setFormData(newData);
-    setSearchResults([]);
-    setSearchQuery('');
-
-    // 自動從 Wikipedia 抓代表照片
-    setIsFetchingPhoto(true);
-    try {
-      const photoUrl = await fetchWikipediaPhoto(
-        place.nameLocal || place.name,
-        place.name
-      );
-      if (photoUrl) {
-        setFormData({ ...newData, photo: photoUrl });
-        addToast(`✅ 已選擇「${place.name}」並自動取得照片`, 'success');
-      } else {
-        addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
-      }
-    } catch {
-      addToast(`✅ 已選擇「${place.name}」，請補充其他欄位`, 'success');
-    } finally {
-      setIsFetchingPhoto(false);
-    }
+    searchInputRef.current?.focus();
   };
 
   const handleFetchPhoto = async () => {
@@ -222,10 +170,11 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setGeminiResults([]);
-                  setSearchResults([]);
                 }}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="輸入地點名稱（中文、韓文、英文皆可）"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) searchInNaverMap(searchQuery);
+                }}
+                placeholder="輸入地點名稱，或點 🇰🇷 讓 AI 翻韓文"
                 className="flex-1 px-3 py-2 bg-milk-tea-50 border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
               />
               {/* AI 韓文搜尋按鈕 */}
@@ -241,14 +190,15 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                   : <span>🇰🇷 韓</span>
                 }
               </button>
-              {/* 一般搜尋按鈕 */}
+              {/* NaverMap 搜尋按鈕 */}
               <button
                 type="button"
-                onClick={handleSearch}
-                disabled={isSearching || !searchQuery.trim()}
+                onClick={() => { if (searchQuery.trim()) searchInNaverMap(searchQuery); }}
+                disabled={!searchQuery.trim()}
+                title="在 Naver Map 搜尋"
                 className="px-3 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold disabled:opacity-50 transition-all flex items-center"
               >
-                {isSearching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                <Search size={16} />
               </button>
             </div>
 
@@ -256,7 +206,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             {geminiResults.length > 0 && (
               <div className="rounded-xl border border-[#AAB6FB] overflow-hidden divide-y divide-[#E8ECFF] bg-white shadow-md">
                 <div className="px-3 py-1.5 bg-[#E8ECFF] flex items-center justify-between">
-                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ 點選景點名，直接在 Naver Map 搜尋</span>
+                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ 點選後貼到搜尋欄，再按 🔍 開 Naver Map</span>
                   <button type="button" onClick={() => setGeminiResults([])} className="text-[#8896F5] hover:text-[#2D3A8A]">
                     <X size={12} />
                   </button>
@@ -266,58 +216,19 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
                     key={i}
                     type="button"
                     onClick={() => handleSelectGeminiPlace(place)}
-                    className="w-full text-left px-3 py-2.5 hover:bg-[#E8ECFF]/50 transition-colors flex items-center justify-between"
+                    className="w-full text-left px-3 py-2.5 hover:bg-[#E8ECFF]/50 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-black text-milk-tea-900">{place.nameZh}</p>
-                      <p className="text-[11px] text-milk-tea-400 mt-0.5">{place.nameKo}</p>
-                    </div>
-                    <ExternalLink size={12} className="text-[#8896F5] flex-shrink-0 ml-2" />
+                    <p className="text-sm font-black text-milk-tea-900">{place.nameZh}</p>
+                    <p className="text-[11px] text-milk-tea-400 mt-0.5">{place.nameKo}</p>
                   </button>
                 ))}
-              </div>
-            )}
-
-            {/* 一般搜尋結果 */}
-            {searchResults.length > 0 && (
-              <div className="rounded-xl border border-milk-tea-200 overflow-hidden divide-y divide-milk-tea-100">
-                {searchResults.map((place) => (
-                  <button
-                    key={place.id}
-                    type="button"
-                    onClick={() => handleSelectPlace(place)}
-                    className="w-full text-left px-3 py-2.5 hover:bg-milk-tea-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-milk-tea-900 truncate">{place.name}</p>
-                        <p className="text-[10px] text-milk-tea-400 truncate mt-0.5">{place.address}</p>
-                      </div>
-                      <span className="text-[10px] text-milk-tea-300 font-mono ml-2 flex-shrink-0">
-                        {place.lat.toFixed(4)}, {place.lng.toFixed(4)}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setSearchResults([])}
-                  className="w-full py-2 text-[10px] text-milk-tea-300 hover:text-milk-tea-500 flex items-center justify-center space-x-1"
-                >
-                  <X size={10} />
-                  <span>收起</span>
-                </button>
               </div>
             )}
 
             <p className="text-[10px] text-milk-tea-300 text-center">
-              找不到？試試在 Naver Map 搜尋後貼上連結
-              <button
-                type="button"
-                onClick={() => setInputMode('naver')}
-                className="ml-1 underline text-milk-tea-400"
-              >
-                切換
+              找到後複製 Naver Map 連結，切換到
+              <button type="button" onClick={() => setInputMode('naver')} className="ml-1 underline text-milk-tea-400">
+                貼上連結模式
               </button>
             </p>
           </div>
