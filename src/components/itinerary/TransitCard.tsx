@@ -3,9 +3,18 @@ import { motion } from 'motion/react';
 import { Navigation, Car, ExternalLink, Loader2 } from 'lucide-react';
 import { Transit, TransportMode } from '../../types';
 import { TransportIcon } from '../common/TransportIcon';
-import { openNaverMapDirections, openUberToDestination } from '../../utils/deepLink';
+import { openNaverMapDirections, openUberToDestination, openKakaoMapDirections } from '../../utils/deepLink';
 import { useTripStore } from '../../stores/tripStore';
 import { fetchWalkingRoute, fetchDrivingRoute } from '../../services/osrmService';
+
+// Kakao Map 模式對應
+const KAKAO_MODE: Partial<Record<TransportMode, 'car' | 'traffic' | 'walk' | 'bicycle'>> = {
+  walking: 'walk',
+  bus:     'traffic',
+  subway:  'traffic',
+  taxi:    'car',
+  uber:    'car',
+};
 
 interface TransitCardProps {
   transit: Transit;
@@ -151,33 +160,57 @@ export const TransitCard: React.FC<TransitCardProps> = ({
           </div>
         </div>
 
-        {/* 公車/地鐵估算說明 */}
-        {(transit.selectedMode === 'bus' || transit.selectedMode === 'subway') && (
-          <p className="text-[9px] text-milk-tea-300 -mt-1">
-            ○ 公車/地鐵時間為系統估算，請以 Naver Map 查詢為準
-          </p>
+        {/* 公車/地鐵 → Kakao Map 大眾運輸（主要按鈕） */}
+        {(transit.selectedMode === 'bus' || transit.selectedMode === 'subway') ? (
+          <>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => openKakaoMapDirections(
+                { ...originCoords, name: '' },
+                { ...destinationCoords, name: destinationName },
+                'traffic'
+              )}
+              className="w-full py-2.5 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm transition-colors text-white"
+              style={{ backgroundColor: '#FAE100', color: '#3C1E1E' }}
+            >
+              <Navigation className="w-4 h-4" />
+              <span>在 Kakao Map 查詢大眾運輸</span>
+              <ExternalLink className="w-3 h-3 opacity-70" />
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
+              className="w-full py-2 bg-milk-tea-100 text-milk-tea-600 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition-colors"
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              <span>Naver Map 路線</span>
+            </motion.button>
+          </>
+        ) : (
+          <>
+            {/* 步行/計程車/Uber → Naver Map 主要按鈕 */}
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
+              className="w-full py-2.5 bg-milk-tea-500 text-white rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm hover:bg-milk-tea-600 transition-colors"
+            >
+              <Navigation className="w-4 h-4" />
+              <span>在 Naver Map 查詢路線</span>
+              <ExternalLink className="w-3 h-3 opacity-70" />
+            </motion.button>
+            {/* 計程車/Uber 也顯示 Uber 按鈕 */}
+            {(transit.selectedMode === 'taxi' || transit.selectedMode === 'uber') && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => openUberToDestination({ ...destinationCoords, name: destinationName })}
+                className="w-full py-2 bg-[#2D2030] text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
+              >
+                <Car className="w-3.5 h-3.5" />
+                <span>Uber 叫車前往</span>
+              </motion.button>
+            )}
+          </>
         )}
-
-        {/* Primary: Naver Map */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => openNaverMapDirections({ ...destinationCoords, name: destinationName })}
-          className="w-full py-2.5 bg-milk-tea-500 text-white rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-sm hover:bg-milk-tea-600 transition-colors"
-        >
-          <Navigation className="w-4 h-4" />
-          <span>在 Naver Map 查詢路線</span>
-          <ExternalLink className="w-3 h-3 opacity-70" />
-        </motion.button>
-
-        {/* Secondary: Uber */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => openUberToDestination({ ...destinationCoords, name: destinationName })}
-          className="w-full py-2 bg-[#2D2030] text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity"
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Uber 叫車前往</span>
-        </motion.button>
       </div>
     </div>
   );

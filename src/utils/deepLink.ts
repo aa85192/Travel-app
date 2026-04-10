@@ -201,6 +201,22 @@ export function openInNaverMap(place: { lat: number; lng: number; name: string }
 }
 
 /**
+ * 在 Kakao Map 開啟路線（深層連結，不需 API key）
+ * URL 格式：https://map.kakao.com/link/by/{mode}/{name},{lat},{lng}/{name},{lat},{lng}
+ * mode: car | traffic(大眾運輸) | walk | bicycle
+ */
+export function openKakaoMapDirections(
+  origin: { lat: number; lng: number; name: string },
+  destination: { lat: number; lng: number; name: string },
+  mode: 'car' | 'traffic' | 'walk' | 'bicycle' = 'traffic'
+): void {
+  const from = `${encodeURIComponent(origin.name)},${origin.lat},${origin.lng}`;
+  const to   = `${encodeURIComponent(destination.name)},${destination.lat},${destination.lng}`;
+  const webUrl = `https://map.kakao.com/link/by/${mode}/${from}/${to}`;
+  triggerAnchorClick(webUrl, true);
+}
+
+/**
  * 用關鍵字在 Naver Map 搜尋（不需座標）
  * 適合用於 AI 產生的韓文店名搜尋
  */
