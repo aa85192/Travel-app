@@ -31,8 +31,20 @@ function isRateLimitError(message: string): boolean {
     lower.includes('quota') ||
     lower.includes('rate limit') ||
     lower.includes('resource_exhausted') ||
-    lower.includes('retry in')
+    lower.includes('retry in') ||
+    lower.includes('high demand') ||
+    lower.includes('temporarily') ||
+    lower.includes('try again later') ||
+    lower.includes('overloaded') ||
+    lower.includes('unavailable')
   );
+}
+
+/** 根據重試次數計算指數退避延遲（毫秒） */
+function backoffDelayMs(attempt: number, parsedDelayMs: number): number {
+  // 若 API 有提供建議等待時間則優先使用，否則用指數退避 5s / 10s / 20s
+  if (parsedDelayMs > 0) return parsedDelayMs;
+  return Math.min(5_000 * Math.pow(2, attempt), 30_000);
 }
 
 const MAX_RETRIES = 2;
@@ -79,13 +91,13 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
       lastErrorMessage = message;
 
       if (isRateLimitError(message) && attempt < MAX_RETRIES) {
-        const delayMs = parseRetryDelayMs(message);
+        const delayMs = backoffDelayMs(attempt, parseRetryDelayMs(message));
         await new Promise((r) => setTimeout(r, delayMs));
         continue;
       }
 
       if (isRateLimitError(message)) {
-        throw new Error('AI 搜尋配額暫時用完，請稍後再試');
+        throw new Error('AI 服務目前繁忙，請稍後再試');
       }
 
       throw new Error(message);
@@ -111,7 +123,7 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
 
   // All retries exhausted
   if (isRateLimitError(lastErrorMessage)) {
-    throw new Error('AI 搜尋配額暫時用完，請稍後再試');
+    throw new Error('AI 服務目前繁忙，請稍後再試');
   }
   throw new Error(lastErrorMessage || 'AI 搜尋失敗，請稍後再試');
 }
