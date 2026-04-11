@@ -10,7 +10,7 @@ export default defineConfig(({mode}) => {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || process.env.GEMINI_API_KEY),
-      // VITE_KAKAO_JS_KEY 由 Vite 自動注入（VITE_ 前綴），此行僅供說明
+      'import.meta.env.VITE_KAKAO_JS_KEY': JSON.stringify(env.VITE_KAKAO_JS_KEY || process.env.VITE_KAKAO_JS_KEY || ''),
     },
     resolve: {
       alias: {
