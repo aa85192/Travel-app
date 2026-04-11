@@ -12,9 +12,7 @@ interface ImageUploaderProps {
   targetBytes?: number;
   /** Preview shape: 'square' | 'wide'. Default 'square' */
   previewShape?: 'square' | 'wide';
-  /** Label shown above (optional – caller may render its own label) */
-  label?: string;
-  /** Show auto-fetch button slot */
+  /** Extra button slot (e.g., auto-fetch) rendered after the upload button */
   extra?: React.ReactNode;
 }
 
@@ -25,7 +23,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   maxDimension = 1280,
   targetBytes = 300 * 1024,
   previewShape = 'square',
-  extra,
+  extra = null,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -160,14 +158,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
       {/* Compression stats toast */}
       {showStats && lastResult && (
-        <div className="flex items-center space-x-1.5 text-[11px] text-milk-tea-500 animate-fade-in">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-milk-tea-500 animate-fade-in leading-tight">
           <CheckCircle size={11} className="text-green-500 flex-shrink-0" />
-          <span>
+          <span className="whitespace-nowrap">
             壓縮完成：{formatBytes(lastResult.originalSize)} → {formatBytes(lastResult.compressedSize)}
-            <span className="ml-1 text-green-600 font-semibold">
-              （節省 {Math.round((1 - lastResult.ratio) * 100)}%）
-            </span>
-            · {lastResult.width}×{lastResult.height} · {lastResult.format.toUpperCase()}
+          </span>
+          <span className="text-green-600 font-semibold whitespace-nowrap">
+            節省 {Math.round((1 - lastResult.ratio) * 100)}%
+          </span>
+          <span className="text-milk-tea-300 whitespace-nowrap">
+            {lastResult.width}×{lastResult.height} · {lastResult.format.toUpperCase()}
           </span>
         </div>
       )}
