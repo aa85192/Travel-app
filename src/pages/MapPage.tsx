@@ -119,7 +119,12 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     bounds.extend(new window.kakao.maps.LatLng(origin.lat, origin.lng));
     bounds.extend(new window.kakao.maps.LatLng(destination.lat, destination.lng));
     map.setBounds(bounds);
-  }, [sdkReady, req]);
+
+    // 大眾運輸模式：畫虛線連接起終點作為視覺提示
+    if (IS_TRANSIT(mode)) {
+      drawDashedLine(map, origin, destination, MODE_COLOR[mode] ?? '#8896F5');
+    }
+  }, [sdkReady, req, mode]);
 
   // ── 駕車/步行 → 查 Kakao Directions 並畫路線 ─────────────
   useEffect(() => {
@@ -133,12 +138,17 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
       setCarRoute(route);
       setRouteLoading(false);
 
-      if (!route || !kakaoMap.current) {
-        console.warn('[MapPage] No route or map not ready');
+      const map = kakaoMap.current;
+      if (!map) return;
+
+      if (!route) {
+        // API 失敗 → fallback 直線
+        console.warn('[MapPage] No route from API, drawing fallback line');
+        drawDashedLine(map, req.origin, req.destination, MODE_COLOR[mode] ?? '#E8A830');
         return;
       }
 
-      // 畫路線折線
+      // 畫實際路線折線
       const allPoints: any[] = [];
       for (const road of route.roads) {
         const pts = vertexesToLatLng(road.vertexes);
@@ -154,10 +164,30 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
           strokeOpacity: 0.85,
           strokeStyle: 'solid',
         });
-        polyline.setMap(kakaoMap.current);
+        polyline.setMap(map);
       }
     });
   }, [sdkReady, req, mode]);
+
+  // ── 輔助：畫虛線 ─────────────────────────────────────────
+  function drawDashedLine(
+    map: any,
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+    color: string,
+  ) {
+    const polyline = new window.kakao.maps.Polyline({
+      path: [
+        new window.kakao.maps.LatLng(from.lat, from.lng),
+        new window.kakao.maps.LatLng(to.lat, to.lng),
+      ],
+      strokeWeight: 3,
+      strokeColor: color,
+      strokeOpacity: 0.6,
+      strokeStyle: 'dashed',
+    });
+    polyline.setMap(map);
+  }
 
   // ── 輔助：建立自訂標記 ────────────────────────────────────
   function addMarker(map: any, lat: number, lng: number, name: string, color: string, label: string) {
