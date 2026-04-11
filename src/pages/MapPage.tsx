@@ -79,14 +79,14 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
 
     console.log('[MapPage] Loading Kakao Maps SDK...');
     const script = document.createElement('script');
-    script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}`;
     script.async = true;
     script.onload = () => {
       console.log('[MapPage] Kakao Maps SDK loaded successfully');
       setSdkReady(true);
     };
-    script.onerror = () => {
-      console.error('[MapPage] Failed to load Kakao Maps SDK');
+    script.onerror = (e) => {
+      console.error('[MapPage] Failed to load Kakao Maps SDK', e);
       setSdkError(true);
     };
     document.head.appendChild(script);
