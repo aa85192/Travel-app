@@ -70,8 +70,8 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
       return;
     }
 
-    // 已載入
-    if (window.kakao?.maps?.Map) {
+    // 已載入且已初始化
+    if (window.kakao?.maps?.LatLng) {
       console.log('[MapPage] Kakao Maps SDK already loaded');
       setSdkReady(true);
       return;
@@ -79,11 +79,14 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
 
     console.log('[MapPage] Loading Kakao Maps SDK...');
     const script = document.createElement('script');
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}&autoload=false`;
     script.async = true;
     script.onload = () => {
-      console.log('[MapPage] Kakao Maps SDK loaded successfully');
-      setSdkReady(true);
+      // autoload=false 需呼叫 load() callback 確保所有 class 就緒
+      window.kakao.maps.load(() => {
+        console.log('[MapPage] Kakao Maps SDK fully ready');
+        setSdkReady(true);
+      });
     };
     script.onerror = (e) => {
       console.error('[MapPage] Failed to load Kakao Maps SDK', e);
