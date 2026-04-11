@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X, Sparkles, Map } from 'lucide-react';
+import { MapPin, Globe, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X, Sparkles, Map } from 'lucide-react';
+import { ImageUploader } from '../common/ImageUploader';
 import { Spot, SpotCategory } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
@@ -465,7 +466,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
       <div className="grid grid-cols-1 gap-4">
         <div>
           <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1 flex items-center justify-between">
-            <span>照片 URL</span>
+            <span>照片</span>
             <button
               type="button"
               onClick={handleFetchPhoto}
@@ -478,35 +479,14 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
               <span>{isFetchingPhoto ? '搜尋中...' : '自動抓取'}</span>
             </button>
           </label>
-          <div className="flex space-x-3">
-            <div className="flex-1 relative">
-              <ImageIcon size={16} className="absolute left-4 top-3.5 text-milk-tea-300" />
-              <input
-                type="text"
-                value={formData.photo || ''}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
-                placeholder="https://... 或點選「自動抓取」"
-              />
-            </div>
-            {isFetchingPhoto ? (
-              <div className="w-12 h-12 rounded-xl border border-milk-tea-200 flex-shrink-0 bg-milk-tea-50 flex items-center justify-center">
-                <Loader2 size={16} className="animate-spin text-milk-tea-300" />
-              </div>
-            ) : formData.photo ? (
-              <div className="w-12 h-12 rounded-xl overflow-hidden border border-milk-tea-200 flex-shrink-0 bg-milk-tea-50">
-                <img
-                  src={formData.photo}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/placeholder/100/100';
-                  }}
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ) : null}
-          </div>
+          <ImageUploader
+            value={formData.photo || ''}
+            onChange={(v) => setFormData({ ...formData, photo: v })}
+            placeholder="https://... 或點選「自動抓取」"
+            maxDimension={960}
+            targetBytes={200 * 1024}
+            previewShape="square"
+          />
         </div>
 
         <div>

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { ModalShell } from './ModalShell';
 import { useTripStore } from '../../stores/tripStore';
 import { useUIStore } from '../../stores/uiStore';
-import { Calendar, MapPin, Image as ImageIcon } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ImageUploader } from '../common/ImageUploader';
 
 export const TripInfoEditModal: React.FC = () => {
   const { activeModal, closeModal, addToast } = useUIStore();
@@ -108,25 +109,16 @@ export const TripInfoEditModal: React.FC = () => {
 
         <div>
           <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1">
-            封面圖 URL
+            封面圖
           </label>
-          <div className="flex space-x-3">
-            <div className="flex-1 relative">
-              <ImageIcon size={16} className="absolute left-4 top-3.5 text-milk-tea-300" />
-              <input
-                type="text"
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-white border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
-                placeholder="https://..."
-              />
-            </div>
-            {coverImage && (
-              <div className="w-16 h-10 rounded-lg overflow-hidden border border-milk-tea-200 flex-shrink-0">
-                <img src={coverImage} alt="Preview" className="w-full h-full object-cover" />
-              </div>
-            )}
-          </div>
+          <ImageUploader
+            value={coverImage}
+            onChange={setCoverImage}
+            placeholder="https://..."
+            maxDimension={1280}
+            targetBytes={300 * 1024}
+            previewShape="wide"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
