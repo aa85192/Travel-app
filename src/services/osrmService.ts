@@ -54,3 +54,47 @@ export const fetchDrivingRoute = (
   fromLat: number, fromLng: number,
   toLat: number, toLng: number
 ) => fetchOSRM(fromLat, fromLng, toLat, toLng, 'car');
+
+// ── 帶幾何路徑的版本（給地圖頁繪製折線使用） ────────────────────
+
+export interface OSRMRouteGeometry {
+  duration: number;                    // 秒
+  distance: number;                    // 公尺
+  coordinates: { lat: number; lng: number }[];  // 折線座標
+}
+
+/**
+ * 取得帶完整幾何路徑的 OSRM 路線
+ * - profile: foot (步行) / car (駕車)
+ * - 回傳座標陣列可直接餵給 Kakao Maps Polyline
+ */
+export async function fetchOSRMRouteGeometry(
+  fromLat: number, fromLng: number,
+  toLat: number, toLng: number,
+  profile: 'foot' | 'car',
+): Promise<OSRMRouteGeometry | null> {
+  try {
+    const url =
+      `${OSRM_BASE}/${profile}/${fromLng},${fromLat};${toLng},${toLat}` +
+      `?overview=full&geometries=geojson&steps=false`;
+
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const route = data?.routes?.[0];
+    if (!route) return null;
+
+    // GeoJSON LineString: coordinates = [[lng, lat], ...]
+    const coords: [number, number][] = route.geometry?.coordinates ?? [];
+    const points = coords.map(([lng, lat]) => ({ lat, lng }));
+
+    return {
+      duration: Math.round(route.duration),
+      distance: Math.round(route.distance),
+      coordinates: points,
+    };
+  } catch {
+    return null;
+  }
+}
