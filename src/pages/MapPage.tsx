@@ -63,6 +63,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
 
   // ── 載入 Kakao Maps JS SDK ─────────────────────────────────
   useEffect(() => {
+    console.log('[MapPage] JS_KEY present:', !!JS_KEY, 'length:', JS_KEY?.length ?? 0);
     if (!JS_KEY) {
       console.error('[MapPage] VITE_KAKAO_JS_KEY not set');
       setSdkError(true);
