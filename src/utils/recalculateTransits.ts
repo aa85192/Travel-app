@@ -46,11 +46,13 @@ export function estimateTransit(from: Spot, to: Spot): { [key in TransportMode]?
     taxi: {
       distance: Math.round(distance * 1.3),
       duration: Math.round((distance * 1.3) / taxiSpeed / 60),
-      cost: Math.round(4800 + (distance / 1000) * 1000), // 簡單韓幣計程車費估算
+      // 首爾計程車：基本 ₩4,800（1.6km 內），超過後 ₩763/km
+      cost: Math.round(4800 + Math.max(0, (distance * 1.3) / 1000 - 1.6) * 763),
     },
     uber: {
       distance: Math.round(distance * 1.3),
       duration: Math.round((distance * 1.3) / taxiSpeed / 60),
+      cost: Math.round(4800 + Math.max(0, (distance * 1.3) / 1000 - 1.6) * 763),
     }
   };
 }

@@ -109,6 +109,16 @@ export const TransitCard: React.FC<TransitCardProps> = ({
   const currentEst = getEstimate(transit.selectedMode);
   const storedEst = transit.estimates[transit.selectedMode];
 
+  // 首爾計程車費：基本 ₩4,800（1.6km 內），之後 ₩763/km
+  const computeTaxiCost = (distanceMeters: number): number => {
+    const km = distanceMeters / 1000;
+    return Math.round(4800 + Math.max(0, km - 1.6) * 763);
+  };
+  const isTaxiMode = transit.selectedMode === 'taxi' || transit.selectedMode === 'uber';
+  const displayCost = isTaxiMode && currentEst
+    ? computeTaxiCost(currentEst.distance)
+    : storedEst?.cost;
+
   return (
     <div className="relative pl-12 py-2">
       {/* Timeline connector */}
@@ -119,14 +129,14 @@ export const TransitCard: React.FC<TransitCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
             {[
-              { id: 'walking',  btnModes: ['walking'] as TransportMode[],        label: '步行' },
-              { id: 'transit',  btnModes: ['bus', 'subway'] as TransportMode[],  label: '公車 / 地鐵' },
-              { id: 'taxi',     btnModes: ['taxi'] as TransportMode[],           label: '計程車' },
-              { id: 'uber',     btnModes: ['uber'] as TransportMode[],           label: 'Uber' },
-            ].map(({ id, btnModes, label }) => {
+              { id: 'walking',  btnModes: ['walking'] as TransportMode[],       label: '步行',          showBothIcons: false },
+              { id: 'transit',  btnModes: ['bus', 'subway'] as TransportMode[], label: '公車 / 地鐵',   showBothIcons: true  },
+              { id: 'taxi',     btnModes: ['taxi', 'uber'] as TransportMode[],  label: '計程車 / Uber', showBothIcons: false },
+            ].map(({ id, btnModes, label, showBothIcons }) => {
               const active = btnModes.includes(transit.selectedMode);
               const color = MODE_COLORS[btnModes[0]];
-              const isGroup = btnModes.length > 1;
+              const iconsToShow = showBothIcons ? btnModes : [btnModes[0]];
+              const isWide = iconsToShow.length > 1;
               return (
                 <button
                   key={id}
@@ -134,14 +144,14 @@ export const TransitCard: React.FC<TransitCardProps> = ({
                   title={label}
                   onClick={() => updateTransitMode(dayNumber, transit.id, btnModes[0])}
                   style={active ? { backgroundColor: color.bg, color: color.text } : {}}
-                  className={`${isGroup ? 'px-1.5' : 'w-7'} h-7 rounded-full flex items-center justify-center gap-0.5 transition-all active:scale-90 ${
+                  className={`${isWide ? 'px-1.5' : 'w-7'} h-7 rounded-full flex items-center justify-center gap-0.5 transition-all active:scale-90 ${
                     active
                       ? 'shadow-sm scale-110'
                       : 'bg-milk-tea-100 text-milk-tea-400 hover:bg-milk-tea-200'
                   }`}
                 >
-                  {btnModes.map(m => (
-                    <TransportIcon key={m} mode={m} className={isGroup ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                  {iconsToShow.map(m => (
+                    <TransportIcon key={m} mode={m} className={isWide ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
                   ))}
                 </button>
               );
@@ -156,8 +166,8 @@ export const TransitCard: React.FC<TransitCardProps> = ({
               ) : currentEst ? (
                 <span className="text-[10px] text-milk-tea-400 font-mono">
                   約 {currentEst.duration} 分・{(currentEst.distance / 1000).toFixed(1)} km
-                  {storedEst?.cost && (
-                    <span className="ml-1 text-milk-tea-300">₩{storedEst.cost.toLocaleString()}</span>
+                  {displayCost && (
+                    <span className="ml-1 text-milk-tea-300">₩{displayCost.toLocaleString()}</span>
                   )}
                   <span className={`ml-1 text-[9px] ${currentEst.isReal ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}`}>
                     {currentEst.isReal ? '● 實測' : '○ 估算'}
