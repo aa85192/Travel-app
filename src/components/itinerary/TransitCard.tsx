@@ -6,7 +6,7 @@ import { TransportIcon } from '../common/TransportIcon';
 import { openNaverMapDirections, openUberToDestination, openKakaoMapDirections } from '../../utils/deepLink';
 import { useTripStore } from '../../stores/tripStore';
 import { useUIStore } from '../../stores/uiStore';
-import { fetchWalkingRoute, fetchDrivingRoute } from '../../services/osrmService';
+import { fetchDrivingRoute } from '../../services/osrmService';
 
 // Kakao Map 模式對應
 const KAKAO_MODE: Partial<Record<TransportMode, 'car' | 'traffic' | 'walk' | 'bicycle'>> = {
@@ -43,12 +43,6 @@ const MODE_COLORS: Record<TransportMode, { bg: string; text: string }> = {
   uber:    { bg: '#2D2030', text: '#fff' },
 };
 
-// OSRM 可查的模式（公車/地鐵繼續用估算）
-const OSRM_SUPPORTED: Partial<Record<TransportMode, 'walking' | 'driving'>> = {
-  walking: 'walking',
-  taxi: 'driving',
-  uber: 'driving',
-};
 
 interface LiveEstimate {
   duration: number;
@@ -77,7 +71,6 @@ export const TransitCard: React.FC<TransitCardProps> = ({
     });
     setNavigateTo('map');
   };
-  const modes: TransportMode[] = ['walking', 'bus', 'subway', 'taxi', 'uber'];
 
   // 從 OSRM 取得的即時路線（key = TransportMode）
   const [liveData, setLiveData] = useState<Partial<Record<TransportMode, LiveEstimate>>>({});
@@ -88,19 +81,12 @@ export const TransitCard: React.FC<TransitCardProps> = ({
 
     const load = async () => {
       setLoading(true);
-      const [walkRes, driveRes] = await Promise.all([
-        fetchWalkingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng),
-        fetchDrivingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng),
-      ]);
+      const driveRes = await fetchDrivingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng);
       if (cancelled) return;
 
       const next: Partial<Record<TransportMode, LiveEstimate>> = {};
 
-      if (walkRes) {
-        next.walking = { ...walkRes, isReal: true };
-      }
       if (driveRes) {
-        const taxiEst = transit.estimates.taxi;
         next.taxi = { ...driveRes, isReal: true };
         next.uber = { ...driveRes, isReal: true };
       }
@@ -132,43 +118,53 @@ export const TransitCard: React.FC<TransitCardProps> = ({
         {/* Mode selector */}
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
-            {modes.map((m) => {
-              const active = m === transit.selectedMode;
-              const color = MODE_COLORS[m];
+            {[
+              { id: 'walking',  btnModes: ['walking'] as TransportMode[],        label: '步行' },
+              { id: 'transit',  btnModes: ['bus', 'subway'] as TransportMode[],  label: '公車 / 地鐵' },
+              { id: 'taxi',     btnModes: ['taxi'] as TransportMode[],           label: '計程車' },
+              { id: 'uber',     btnModes: ['uber'] as TransportMode[],           label: 'Uber' },
+            ].map(({ id, btnModes, label }) => {
+              const active = btnModes.includes(transit.selectedMode);
+              const color = MODE_COLORS[btnModes[0]];
+              const isGroup = btnModes.length > 1;
               return (
                 <button
-                  key={m}
+                  key={id}
                   type="button"
-                  title={MODE_LABELS[m]}
-                  onClick={() => updateTransitMode(dayNumber, transit.id, m)}
+                  title={label}
+                  onClick={() => updateTransitMode(dayNumber, transit.id, btnModes[0])}
                   style={active ? { backgroundColor: color.bg, color: color.text } : {}}
-                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                  className={`${isGroup ? 'px-1.5' : 'w-7'} h-7 rounded-full flex items-center justify-center gap-0.5 transition-all active:scale-90 ${
                     active
                       ? 'shadow-sm scale-110'
                       : 'bg-milk-tea-100 text-milk-tea-400 hover:bg-milk-tea-200'
                   }`}
                 >
-                  <TransportIcon mode={m} className="w-3.5 h-3.5" />
+                  {btnModes.map(m => (
+                    <TransportIcon key={m} mode={m} className={isGroup ? 'w-3 h-3' : 'w-3.5 h-3.5'} />
+                  ))}
                 </button>
               );
             })}
           </div>
 
-          {/* 時間顯示 */}
+          {/* 時間顯示（公車/地鐵無法估算，不顯示） */}
           <div className="text-right">
-            {loading && !currentEst ? (
-              <Loader2 size={12} className="animate-spin text-milk-tea-300 ml-auto" />
-            ) : currentEst ? (
-              <span className="text-[10px] text-milk-tea-400 font-mono">
-                約 {currentEst.duration} 分・{(currentEst.distance / 1000).toFixed(1)} km
-                {storedEst?.cost && (
-                  <span className="ml-1 text-milk-tea-300">₩{storedEst.cost.toLocaleString()}</span>
-                )}
-                <span className={`ml-1 text-[9px] ${currentEst.isReal ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}`}>
-                  {currentEst.isReal ? '● 實測' : '○ 估算'}
+            {transit.selectedMode !== 'bus' && transit.selectedMode !== 'subway' && (
+              loading && !currentEst ? (
+                <Loader2 size={12} className="animate-spin text-milk-tea-300 ml-auto" />
+              ) : currentEst ? (
+                <span className="text-[10px] text-milk-tea-400 font-mono">
+                  約 {currentEst.duration} 分・{(currentEst.distance / 1000).toFixed(1)} km
+                  {storedEst?.cost && (
+                    <span className="ml-1 text-milk-tea-300">₩{storedEst.cost.toLocaleString()}</span>
+                  )}
+                  <span className={`ml-1 text-[9px] ${currentEst.isReal ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}`}>
+                    {currentEst.isReal ? '● 實測' : '○ 估算'}
+                  </span>
                 </span>
-              </span>
-            ) : null}
+              ) : null
+            )}
           </div>
         </div>
 
