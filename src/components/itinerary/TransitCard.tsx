@@ -7,6 +7,7 @@ import { openNaverMapDirections, openUberToDestination, openKakaoMapDirections }
 import { useTripStore } from '../../stores/tripStore';
 import { useUIStore } from '../../stores/uiStore';
 import { fetchDrivingRoute } from '../../services/osrmService';
+import { fetchUberEstimate, milesToMeters } from '../../services/uberService';
 
 // Kakao Map 模式對應
 const KAKAO_MODE: Partial<Record<TransportMode, 'car' | 'traffic' | 'walk' | 'bicycle'>> = {
@@ -47,7 +48,8 @@ const MODE_COLORS: Record<TransportMode, { bg: string; text: string }> = {
 interface LiveEstimate {
   duration: number;
   distance: number;
-  isReal: boolean;  // true = OSRM 真實資料, false = Haversine 估算
+  isReal: boolean;   // true = 真實 API 資料, false = Haversine 估算
+  fareStr?: string;  // Uber API 格式化車資，如 "₩5,000-₩7,000"
 }
 
 export const TransitCard: React.FC<TransitCardProps> = ({
@@ -81,14 +83,32 @@ export const TransitCard: React.FC<TransitCardProps> = ({
 
     const load = async () => {
       setLoading(true);
-      const driveRes = await fetchDrivingRoute(originCoords.lat, originCoords.lng, destinationCoords.lat, destinationCoords.lng);
+
+      // 優先嘗試 Uber API（車資＋路程時間）
+      const uberRes = await fetchUberEstimate(
+        originCoords.lat, originCoords.lng,
+        destinationCoords.lat, destinationCoords.lng,
+      );
       if (cancelled) return;
 
       const next: Partial<Record<TransportMode, LiveEstimate>> = {};
 
-      if (driveRes) {
-        next.taxi = { ...driveRes, isReal: true };
-        next.uber = { ...driveRes, isReal: true };
+      if (uberRes) {
+        const durationMin = Math.round(uberRes.duration / 60);
+        const distanceM   = milesToMeters(uberRes.distance);
+        const fareStr     = uberRes.estimate ?? undefined;
+        next.taxi = { duration: durationMin, distance: distanceM, isReal: true, fareStr };
+        next.uber = { duration: durationMin, distance: distanceM, isReal: true, fareStr };
+      } else {
+        // Uber API 不可用時，備援使用 OSRM 駕車路線
+        const driveRes = await fetchDrivingRoute(
+          originCoords.lat, originCoords.lng,
+          destinationCoords.lat, destinationCoords.lng,
+        );
+        if (!cancelled && driveRes) {
+          next.taxi = { ...driveRes, isReal: true };
+          next.uber = { ...driveRes, isReal: true };
+        }
       }
 
       setLiveData(next);
@@ -109,15 +129,17 @@ export const TransitCard: React.FC<TransitCardProps> = ({
   const currentEst = getEstimate(transit.selectedMode);
   const storedEst = transit.estimates[transit.selectedMode];
 
-  // 首爾計程車費：基本 ₩4,800（1.6km 內），之後 ₩763/km
+  // 首爾計程車費：基本 ₩4,800（1.6km 內），之後 ₩763/km（Uber API 不可用時的備援）
   const computeTaxiCost = (distanceMeters: number): number => {
     const km = distanceMeters / 1000;
     return Math.round(4800 + Math.max(0, km - 1.6) * 763);
   };
   const isTaxiMode = transit.selectedMode === 'taxi' || transit.selectedMode === 'uber';
-  const displayCost = isTaxiMode && currentEst
+  // fareStr 優先（Uber API 真實車資），否則用公式計算
+  const fareStr    = isTaxiMode ? (currentEst?.fareStr ?? null) : null;
+  const displayCost = !fareStr && isTaxiMode && currentEst
     ? computeTaxiCost(currentEst.distance)
-    : storedEst?.cost;
+    : (!fareStr ? storedEst?.cost : null);
 
   return (
     <div className="relative pl-12 py-2">
@@ -166,9 +188,11 @@ export const TransitCard: React.FC<TransitCardProps> = ({
               ) : currentEst ? (
                 <span className="text-[10px] text-milk-tea-400 font-mono">
                   約 {currentEst.duration} 分・{(currentEst.distance / 1000).toFixed(1)} km
-                  {displayCost && (
+                  {fareStr ? (
+                    <span className="ml-1 text-milk-tea-300">{fareStr}</span>
+                  ) : displayCost ? (
                     <span className="ml-1 text-milk-tea-300">₩{displayCost.toLocaleString()}</span>
-                  )}
+                  ) : null}
                   <span className={`ml-1 text-[9px] ${currentEst.isReal ? 'text-[#3DBDAD]' : 'text-milk-tea-300'}`}>
                     {currentEst.isReal ? '● 實測' : '○ 估算'}
                   </span>

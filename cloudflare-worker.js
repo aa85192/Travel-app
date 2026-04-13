@@ -75,7 +75,33 @@ async function fetchFallbackRate(from, to) {
   return rate;
 }
 
-// ── 路由 ─────────────────────────────────────────────────────────
+// ── Uber 票價估算 ──────────────────────────────────────────────────
+// token 快取於 module 層（同一 isolate 有效，重啟後自動重取）
+let _uberToken = null;
+let _uberTokenExpiry = 0;
+
+async function getUberToken(env) {
+  if (_uberToken && Date.now() < _uberTokenExpiry) return _uberToken;
+
+  const res = await fetch('https://auth.uber.com/oauth/v2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     env.UBER_CLIENT_ID,
+      client_secret: env.UBER_CLIENT_SECRET,
+      grant_type:    'client_credentials',
+      scope:         'estimate',  // Uber Rides API client_credentials scope
+    }).toString(),
+  });
+  if (!res.ok) throw new Error(`Uber auth ${res.status}: ${await res.text()}`);
+
+  const data = await res.json();
+  _uberToken        = data.access_token;
+  _uberTokenExpiry  = Date.now() + ((data.expires_in ?? 2592000) - 300) * 1000;
+  return _uberToken;
+}
+
+
 
 export default {
   async fetch(request, env) {
@@ -111,6 +137,59 @@ export default {
       return json({ ok: true, code, data: JSON.parse(raw) }, 200, {
         'Cache-Control': 'no-store',
       });
+    }
+
+    // GET /uber/estimate → Uber 即時票價估算
+    if (path === '/uber/estimate') {
+      const startLat = url.searchParams.get('startLat');
+      const startLng = url.searchParams.get('startLng');
+      const endLat   = url.searchParams.get('endLat');
+      const endLng   = url.searchParams.get('endLng');
+
+      if (!startLat || !startLng || !endLat || !endLng) {
+        return json({ error: 'Missing coordinates' }, 400);
+      }
+      if (!env.UBER_CLIENT_ID || !env.UBER_CLIENT_SECRET) {
+        return json({ error: 'UBER_CLIENT_ID / UBER_CLIENT_SECRET not configured' }, 503);
+      }
+
+      try {
+        const token = await getUberToken(env);
+        const priceUrl =
+          `https://api.uber.com/v1.2/estimates/price` +
+          `?start_latitude=${startLat}&start_longitude=${startLng}` +
+          `&end_latitude=${endLat}&end_longitude=${endLng}`;
+
+        const priceRes = await fetch(priceUrl, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(6000),
+        });
+        if (!priceRes.ok) {
+          const errText = await priceRes.text();
+          return json({ error: `Uber API ${priceRes.status}`, detail: errText }, priceRes.status);
+        }
+
+        const data   = await priceRes.json();
+        const prices = data?.prices ?? [];
+        if (!prices.length) return json({ error: 'No Uber products available' }, 404);
+
+        // 優先找 UberX（最便宜一般車型），否則取最低估價的選項
+        const best =
+          prices.find(p => /uberx$/i.test(p.display_name ?? '')) ??
+          [...prices].sort((a, b) => (a.low_estimate ?? 0) - (b.low_estimate ?? 0))[0];
+
+        return json({
+          displayName:  best.display_name,
+          lowEstimate:  best.low_estimate,   // KRW (number or null)
+          highEstimate: best.high_estimate,  // KRW (number or null)
+          estimate:     best.estimate,       // 格式化字串，如 "₩5,000-₩7,000"
+          currencyCode: best.currency_code,
+          duration:     best.duration,       // 秒
+          distance:     best.distance,       // 英里
+        }, 200, { 'Cache-Control': 'public, max-age=300' });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
     }
 
     // GET /kakao/directions → Kakao Mobility 路線代理
