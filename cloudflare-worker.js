@@ -90,7 +90,7 @@ async function getUberToken(env) {
       client_id:     env.UBER_CLIENT_ID,
       client_secret: env.UBER_CLIENT_SECRET,
       grant_type:    'client_credentials',
-      scope:         'estimate',  // Uber Rides API client_credentials scope
+      scope:         'ride_request.estimate',  // Uber 官方 client_credentials scope for price/time estimates
     }).toString(),
   });
   if (!res.ok) throw new Error(`Uber auth ${res.status}: ${await res.text()}`);
@@ -173,19 +173,28 @@ export default {
         const prices = data?.prices ?? [];
         if (!prices.length) return json({ error: 'No Uber products available' }, 404);
 
-        // 優先找 UberX（最便宜一般車型），否則取最低估價的選項
-        const best =
-          prices.find(p => /uberx$/i.test(p.display_name ?? '')) ??
-          [...prices].sort((a, b) => (a.low_estimate ?? 0) - (b.low_estimate ?? 0))[0];
+        // 選擇最便宜的車型（適用全球：美國 UberX、韓國 UT/Uber Taxi 等）
+        // null 低估價排最後（metered 計程表 / surge 浮動等無固定區間的情況）
+        const sorted = [...prices].sort((a, b) =>
+          (a.low_estimate ?? Number.POSITIVE_INFINITY) -
+          (b.low_estimate ?? Number.POSITIVE_INFINITY)
+        );
+        const best = sorted[0];
 
         return json({
           displayName:  best.display_name,
-          lowEstimate:  best.low_estimate,   // KRW (number or null)
-          highEstimate: best.high_estimate,  // KRW (number or null)
-          estimate:     best.estimate,       // 格式化字串，如 "₩5,000-₩7,000"
+          lowEstimate:  best.low_estimate,   // 本地貨幣 (number or null)
+          highEstimate: best.high_estimate,  // 本地貨幣 (number or null)
+          estimate:     best.estimate,       // 格式化字串，如 "₩5,000-₩7,000" 或 "Metered"
           currencyCode: best.currency_code,
-          duration:     best.duration,       // 秒
+          duration:     best.duration,       // 秒（trip duration）
           distance:     best.distance,       // 英里
+          allProducts:  prices.map(p => ({
+            displayName:  p.display_name,
+            estimate:     p.estimate,
+            lowEstimate:  p.low_estimate,
+            highEstimate: p.high_estimate,
+          })),
         }, 200, { 'Cache-Control': 'public, max-age=300' });
       } catch (e) {
         return json({ error: String(e) }, 500);

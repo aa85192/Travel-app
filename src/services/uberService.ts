@@ -9,14 +9,22 @@
 
 const WORKER_URL = 'https://visa-rate.aa85192.workers.dev';
 
+export interface UberProduct {
+  displayName:  string;
+  estimate:     string;
+  lowEstimate:  number | null;
+  highEstimate: number | null;
+}
+
 export interface UberEstimate {
   displayName:  string;
   lowEstimate:  number | null;
   highEstimate: number | null;
-  estimate:     string;       // Uber 格式化字串，如 "₩5,000-₩7,000"
+  estimate:     string;       // Uber 格式化字串，如 "₩5,000-₩7,000" 或 "Metered"
   currencyCode: string;
-  duration:     number;       // 秒
+  duration:     number;       // 秒（trip duration）
   distance:     number;       // 英里
+  allProducts?: UberProduct[]; // 該區域所有可用 Uber 車型
 }
 
 /**
