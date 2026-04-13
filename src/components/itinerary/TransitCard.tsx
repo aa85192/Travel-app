@@ -84,7 +84,7 @@ export const TransitCard: React.FC<TransitCardProps> = ({
     const load = async () => {
       setLoading(true);
 
-      // 優先嘗試 Uber API（車資＋路程時間）
+      // 優先嘗試 Uber API（車資字串）
       const uberRes = await fetchUberEstimate(
         originCoords.lat, originCoords.lng,
         destinationCoords.lat, destinationCoords.lng,
@@ -93,21 +93,24 @@ export const TransitCard: React.FC<TransitCardProps> = ({
 
       const next: Partial<Record<TransportMode, LiveEstimate>> = {};
 
-      if (uberRes) {
-        const durationMin = Math.round(uberRes.duration / 60);
-        const distanceM   = milesToMeters(uberRes.distance);
-        const fareStr     = uberRes.estimate ?? undefined;
-        next.taxi = { duration: durationMin, distance: distanceM, isReal: true, fareStr };
-        next.uber = { duration: durationMin, distance: distanceM, isReal: true, fareStr };
+      // Uber 車資字串：有數字的才保留（排除 "Metered" 等無法顯示的字串）
+      const fareStr = uberRes?.estimate && /\d/.test(uberRes.estimate)
+        ? uberRes.estimate : undefined;
+
+      // Uber 在韓國為計程表車型，duration/distance 可能為 null/undefined
+      // 有完整路線資料時才用 Uber；否則一律用 OSRM 取路線（備援）
+      if (uberRes && uberRes.duration != null && uberRes.distance != null) {
+        next.taxi = { duration: Math.round(uberRes.duration / 60), distance: milesToMeters(uberRes.distance), isReal: true, fareStr };
+        next.uber = { duration: Math.round(uberRes.duration / 60), distance: milesToMeters(uberRes.distance), isReal: true, fareStr };
       } else {
-        // Uber API 不可用時，備援使用 OSRM 駕車路線
+        // OSRM 備援（Uber 無路線資料，或 API 失敗）
         const driveRes = await fetchDrivingRoute(
           originCoords.lat, originCoords.lng,
           destinationCoords.lat, destinationCoords.lng,
         );
         if (!cancelled && driveRes) {
-          next.taxi = { ...driveRes, isReal: true };
-          next.uber = { ...driveRes, isReal: true };
+          next.taxi = { ...driveRes, isReal: true, fareStr };
+          next.uber = { ...driveRes, isReal: true, fareStr };
         }
       }
 
