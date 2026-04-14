@@ -1,0 +1,37 @@
+name: Test Uber Webhook
+
+on:
+  workflow_dispatch:  # 手動觸發
+
+jobs:
+  test-webhook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 發送測試 Webhook
+        id: send
+        run: |
+          BODY='{"event_type":"test.event","event_id":"evt_test_001","created_at":"2026-04-14T00:00:00Z"}'
+          SIGNATURE=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "${{ secrets.UBER_WEBHOOK_SECRET }}" | awk '{print $2}')
+
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            https://visa-rate.aa85192.workers.dev/uber/webhook \
+            -H "Content-Type: application/json" \
+            -H "x-uber-signature-version: v1" \
+            -H "x-uber-signature: $SIGNATURE" \
+            -d "$BODY")
+
+          echo "status=$RESPONSE" >> $GITHUB_OUTPUT
+          echo "body=$(cat response.json)" >> $GITHUB_OUTPUT
+
+      - name: 顯示結果
+        run: |
+          echo "HTTP 狀態碼: ${{ steps.send.outputs.status }}"
+          echo "回應內容: ${{ steps.send.outputs.body }}"
+
+      - name: 驗證成功
+        run: |
+          if [ "${{ steps.send.outputs.status }}" != "202" ]; then
+            echo "❌ 失敗！HTTP 狀態碼: ${{ steps.send.outputs.status }}"
+            exit 1
+          fi
+          echo "✅ Uber Webhook 驗證成功！"
