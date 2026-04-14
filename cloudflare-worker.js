@@ -5,11 +5,15 @@
  *   1. GET  /?from=TWD&to=KRW       → Visa 匯率代理
  *   2. POST /sync                    → 儲存行程 { code, data }
  *   3. GET  /sync/:code              → 載入行程
+ *   4. POST /uber/webhook            → Uber Webhook 驗證與事件處理
  *
  * KV 設定（需在 Cloudflare 後台完成）：
  *   Workers & Pages → visa-rate → Settings → Bindings
  *   新增 KV Namespace，Variable name = TRIPS
  *   先到 Workers & Pages → KV 建立一個名為 travel-trips 的 namespace
+ *
+ * 環境變數設定：
+ *   UBER_WEBHOOK_SECRET - Uber Dashboard 的 Webhook Secret
  */
 
 const CORS = {
@@ -75,6 +79,37 @@ async function fetchFallbackRate(from, to) {
   return rate;
 }
 
+// ── Uber Webhook 簽名驗證 ────────────────────────────────────────────
+async function verifyUberWebhookSignature(request, secret) {
+  if (!secret) return false;
+
+  const signature = request.headers.get('x-uber-signature');
+  const version = request.headers.get('x-uber-signature-version');
+
+  if (!signature || !version) return false;
+
+  try {
+    const body = await request.clone().text();
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+
+    const signed = await crypto.subtle.sign('HMAC', key, encoder.encode(body));
+    const expectedSignature = Array.from(new Uint8Array(signed))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    return signature.toLowerCase() === expectedSignature.toLowerCase();
+  } catch (e) {
+    return false;
+  }
+}
+
 // ── Uber 票價估算 ──────────────────────────────────────────────────
 // token 快取於 module 層（同一 isolate 有效，重啟後自動重取）
 let _uberToken = null;
@@ -111,6 +146,36 @@ export default {
 
     const url  = new URL(request.url);
     const path = url.pathname;
+
+    // POST /uber/webhook → Uber Webhook 驗證與事件處理
+    if (request.method === 'POST' && path === '/uber/webhook') {
+      const secret = env.UBER_WEBHOOK_SECRET;
+      if (!secret) {
+        return json({ error: 'UBER_WEBHOOK_SECRET not configured' }, 503);
+      }
+
+      // 驗證 Uber 的簽名
+      const isValid = await verifyUberWebhookSignature(request, secret);
+      if (!isValid) {
+        console.warn('Invalid Uber webhook signature');
+        return json({ error: 'Invalid signature' }, 401);
+      }
+
+      try {
+        const body = await request.json();
+        const eventType = body?.event_type;
+        const eventId = body?.event_id;
+        const createdAt = body?.created_at;
+
+        // 記錄事件（可選：存到 KV 或日誌系統）
+        console.log(`✓ Uber Webhook Event: ${eventType} (ID: ${eventId}, Time: ${createdAt})`);
+
+        // 立即回應 202 Accepted 告訴 Uber 已收到
+        return json({ ok: true, event_id: eventId }, 202);
+      } catch (e) {
+        return json({ error: String(e) }, 400);
+      }
+    }
 
     // POST /sync → 儲存行程
     if (request.method === 'POST' && path === '/sync') {
