@@ -47,6 +47,7 @@ export const SAMPLE_TRIP: Trip = {
     { id: 'mc1', name: '咖啡廳', emoji: '☕', color: '#FFD4B8' },
     { id: 'mc2', name: '衣服', emoji: '👗', color: '#AAB6FB' },
   ],
+  savedSpots: [],
   days: [
     {
       dayNumber: 1,

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw, ArrowLeftRight, Loader2, Pencil } from 'lucide-react';
+import { Plus, Wallet, ArrowRight, UserPlus, Trash2, RefreshCw, ArrowLeftRight, Loader2, Pencil, Cloud, Lock } from 'lucide-react';
 import { Trip, Expense, Participant } from '../types';
 import { calculateSettlement } from '../utils/settlement';
 import { fetchKrwTwdRate, fetchExchangeRates, RateResult } from '../services/exchangeRateService';
+import { getOrCreateSyncCode } from '../services/syncService';
 
 interface BudgetProps {
   trip: Trip;
@@ -15,6 +16,7 @@ const EMOJIS = ['🐱', '🐰', '🐻', '🦊', '🐶', '🐼', '🐨', '🦁', 
 const COLORS = ['#FFACBB', '#AAB6FB', '#99F2E6', '#FFFEE1', '#FFD4B8', '#C5B8FF', '#B8DCFF', '#FFE4A0'];
 
 export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
+  const syncCode = getOrCreateSyncCode();
   const [activeView, setActiveView] = useState<'expenses' | 'settlement' | 'participants'>('expenses');
   /* 共用 / 私人 篩選 */
   const [expenseScope, setExpenseScope] = useState<'shared' | 'personal'>('shared');
@@ -178,28 +180,42 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
 
         {/* 共用 / 私人 切換（只在支出記錄頁顯示） */}
         {activeView === 'expenses' && (
-          <div className="flex space-x-2 mt-3">
-            <button
-              onClick={() => setExpenseScope('shared')}
-              className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-                expenseScope === 'shared'
-                  ? 'bg-milk-tea-500 text-white shadow-sm'
-                  : 'bg-white text-milk-tea-400 border border-milk-tea-200'
-              }`}
-            >
-              共用
-            </button>
-            <button
-              onClick={() => setExpenseScope('personal')}
-              className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
-                expenseScope === 'personal'
-                  ? 'bg-[#C5B8FF] text-white shadow-sm'
-                  : 'bg-white text-milk-tea-400 border border-milk-tea-200'
-              }`}
-            >
-              私人
-            </button>
-          </div>
+          <>
+            <div className="flex space-x-2 mt-3">
+              <button
+                onClick={() => setExpenseScope('shared')}
+                className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                  expenseScope === 'shared'
+                    ? 'bg-milk-tea-500 text-white shadow-sm'
+                    : 'bg-white text-milk-tea-400 border border-milk-tea-200'
+                }`}
+              >
+                共用
+              </button>
+              <button
+                onClick={() => setExpenseScope('personal')}
+                className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                  expenseScope === 'personal'
+                    ? 'bg-[#C5B8FF] text-white shadow-sm'
+                    : 'bg-white text-milk-tea-400 border border-milk-tea-200'
+                }`}
+              >
+                私人
+              </button>
+            </div>
+
+            {/* 說明 banner */}
+            <div className={`mt-2 px-3 py-2 rounded-xl flex items-center space-x-2 text-[10px] font-medium ${
+              expenseScope === 'shared'
+                ? 'bg-milk-tea-50 text-milk-tea-500 border border-milk-tea-100'
+                : 'bg-[#F3F0FF] text-[#7C5CBF] border border-[#E8E3FF]'
+            }`}>
+              {expenseScope === 'shared'
+                ? <><Cloud className="w-3 h-3 flex-shrink-0" /><span>共用費用透過雲端同步碼 <span className="font-mono font-bold tracking-widest">{syncCode}</span> 與旅伴共享</span></>
+                : <><Lock className="w-3 h-3 flex-shrink-0" /><span>私人費用僅儲存在本機，不會同步給旅伴</span></>
+              }
+            </div>
+          </>
         )}
 
         <div className="flex space-x-4 mt-3 border-b border-milk-tea-200">

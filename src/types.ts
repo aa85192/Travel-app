@@ -24,6 +24,15 @@ export interface MerchantCategory {
   color: string;
 }
 
+export interface SavedSpot {
+  id: string;
+  name: string;
+  address?: string;
+  photo?: string;
+  category: SpotCategory;
+  notes?: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
@@ -94,4 +103,5 @@ export interface Trip {
   participants: Participant[];
   expenses: Expense[];
   merchantCategories?: MerchantCategory[];
+  savedSpots?: SavedSpot[];
 }

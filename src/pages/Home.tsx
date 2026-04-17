@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import { Download, Upload, MapPin, ChevronRight, Wallet, Plane,
   BedDouble, Store, Compass, Edit2, Check, X, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trip, MerchantCategory } from '../types';
+import { Trip, MerchantCategory, SavedSpot, SpotCategory } from '../types';
 import { useUIStore } from '../stores/uiStore';
 
 interface HomeProps {
@@ -270,64 +270,159 @@ function MerchantsSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t
   );
 }
 
-/* ── 住宿 ── */
-function AccommodationSection({ trip }: { trip: Trip }) {
-  const hotels = trip.days.flatMap(d =>
-    d.spots.filter(s => s.category === 'hotel').map(s => ({ ...s, date: d.date, dayNumber: d.dayNumber }))
-  );
-  if (!hotels.length) return (
-    <div className="flex flex-col items-center py-8 text-milk-tea-300">
-      <BedDouble className="w-10 h-10 opacity-30 mb-2" />
-      <p className="text-xs">尚無住宿安排</p>
-      <p className="text-[10px] text-milk-tea-200 mt-1">在行程中新增「住宿」類型景點</p>
-    </div>
-  );
+/* ── 住宿（從收藏清單讀取住宿類型）── */
+function AccommodationSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t: Trip) => void }) {
+  const saved = trip.savedSpots ?? [];
+  const hotels = saved.filter(s => s.category === 'hotel');
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newAddr, setNewAddr] = useState('');
+
+  const add = () => {
+    if (!newName.trim()) return;
+    const spot: SavedSpot = { id: `ss_${Date.now()}`, name: newName.trim(), address: newAddr.trim() || undefined, category: 'hotel' };
+    onUpdateTrip({ ...trip, savedSpots: [...saved, spot] });
+    setNewName(''); setNewAddr(''); setShowAdd(false);
+  };
+  const remove = (id: string) => onUpdateTrip({ ...trip, savedSpots: saved.filter(s => s.id !== id) });
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-milk-tea-400">收藏住宿，與行程分開儲存</p>
+        <button onClick={() => setShowAdd(v => !v)}
+          className="flex items-center space-x-1 text-[11px] text-milk-tea-500 font-bold bg-milk-tea-50 px-2.5 py-1 rounded-full border border-milk-tea-200">
+          <Plus className="w-3 h-3" /><span>新增</span>
+        </button>
+      </div>
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+            <div className="bg-white rounded-2xl p-4 border border-milk-tea-200 shadow-sm space-y-2">
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="住宿名稱"
+                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" autoFocus />
+              <input value={newAddr} onChange={e => setNewAddr(e.target.value)} placeholder="地址（選填）"
+                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" />
+              <div className="flex space-x-2 pt-1">
+                <button onClick={add} className="flex-1 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold">儲存</button>
+                <button onClick={() => setShowAdd(false)} className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-400 rounded-xl text-sm font-bold">取消</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {hotels.length === 0 && !showAdd && (
+        <div className="flex flex-col items-center py-8 text-milk-tea-300">
+          <BedDouble className="w-10 h-10 opacity-30 mb-2" />
+          <p className="text-xs">尚無收藏住宿</p>
+        </div>
+      )}
       {hotels.map(h => (
         <div key={h.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm flex items-center space-x-3">
-          {h.photo
-            ? <img src={h.photo} alt={h.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-            : <div className="w-14 h-14 rounded-xl bg-milk-tea-100 flex items-center justify-center flex-shrink-0"><BedDouble className="w-6 h-6 text-milk-tea-300" /></div>
-          }
+          <div className="w-11 h-11 rounded-xl bg-milk-tea-100 flex items-center justify-center flex-shrink-0 text-xl">🏨</div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-milk-tea-900 truncate">{h.name}</p>
-            <p className="text-[10px] text-milk-tea-400 mt-0.5">Day {h.dayNumber} · {h.date}</p>
             {h.address && <p className="text-[10px] text-milk-tea-300 truncate mt-0.5">{h.address}</p>}
           </div>
+          <button onClick={() => remove(h.id)} className="text-milk-tea-200 hover:text-red-400 transition-colors flex-shrink-0">
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       ))}
     </div>
   );
 }
 
-/* ── 景點 ── */
-function AttractionsSection({ trip }: { trip: Trip }) {
-  const spots = trip.days.flatMap(d =>
-    d.spots.filter(s => s.category === 'attraction').map(s => ({ ...s, date: d.date, dayNumber: d.dayNumber }))
-  );
-  if (!spots.length) return (
-    <div className="flex flex-col items-center py-8 text-milk-tea-300">
-      <Compass className="w-10 h-10 opacity-30 mb-2" />
-      <p className="text-xs">尚無景點安排</p>
-      <p className="text-[10px] text-milk-tea-200 mt-1">在行程中新增「景點」類型景點</p>
-    </div>
-  );
+/* ── 景點收藏清單（與行程無關，只是想去清單）── */
+const SPOT_CAT_OPTIONS: { value: SpotCategory; label: string; emoji: string }[] = [
+  { value: 'attraction', label: '景點',   emoji: '🗺️' },
+  { value: 'activity',   label: '活動',   emoji: '🎡' },
+  { value: 'restaurant', label: '餐廳',   emoji: '🍽️' },
+  { value: 'cafe',       label: '咖啡廳', emoji: '☕' },
+  { value: 'shopping',   label: '購物',   emoji: '🛍️' },
+  { value: 'hotel',      label: '住宿',   emoji: '🏨' },
+  { value: 'other',      label: '其他',   emoji: '📌' },
+];
+
+function AttractionsSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t: Trip) => void }) {
+  const saved = trip.savedSpots ?? [];
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newCat, setNewCat] = useState<SpotCategory>('attraction');
+  const [newNotes, setNewNotes] = useState('');
+
+  const add = () => {
+    if (!newName.trim()) return;
+    const spot: SavedSpot = { id: `ss_${Date.now()}`, name: newName.trim(), category: newCat, notes: newNotes.trim() || undefined };
+    onUpdateTrip({ ...trip, savedSpots: [...saved, spot] });
+    setNewName(''); setNewNotes(''); setShowAdd(false);
+  };
+  const remove = (id: string) => onUpdateTrip({ ...trip, savedSpots: saved.filter(s => s.id !== id) });
+
+  const catInfo = (cat: SpotCategory) => SPOT_CAT_OPTIONS.find(o => o.value === cat) ?? SPOT_CAT_OPTIONS[0];
+
   return (
     <div className="space-y-3">
-      {spots.map(s => (
-        <div key={s.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm flex items-center space-x-3">
-          {s.photo
-            ? <img src={s.photo} alt={s.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" referrerPolicy="no-referrer" />
-            : <div className="w-14 h-14 rounded-xl bg-accent-coral/30 flex items-center justify-center flex-shrink-0"><Compass className="w-6 h-6 text-milk-tea-400" /></div>
-          }
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-milk-tea-900 truncate">{s.name}</p>
-            <p className="text-[10px] text-milk-tea-400 mt-0.5">Day {s.dayNumber} · {s.date}</p>
-            {s.cost != null && <p className="text-[10px] font-mono text-milk-tea-500 mt-0.5">{s.currency || 'KRW'} {s.cost.toLocaleString()}</p>}
-          </div>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-milk-tea-400">收藏想去的地方，與行程分開儲存</p>
+        <button onClick={() => setShowAdd(v => !v)}
+          className="flex items-center space-x-1 text-[11px] text-milk-tea-500 font-bold bg-milk-tea-50 px-2.5 py-1 rounded-full border border-milk-tea-200">
+          <Plus className="w-3 h-3" /><span>新增</span>
+        </button>
+      </div>
+
+      {/* 新增表單 */}
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden">
+            <div className="bg-white rounded-2xl p-4 border border-milk-tea-200 shadow-sm space-y-3">
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="地點名稱"
+                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" autoFocus />
+              <div className="flex flex-wrap gap-1.5">
+                {SPOT_CAT_OPTIONS.map(o => (
+                  <button key={o.value} onClick={() => setNewCat(o.value)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${newCat === o.value ? 'bg-milk-tea-500 text-white' : 'bg-milk-tea-50 text-milk-tea-400 border border-milk-tea-200'}`}>
+                    {o.emoji} {o.label}
+                  </button>
+                ))}
+              </div>
+              <input value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="備註（選填）"
+                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" />
+              <div className="flex space-x-2">
+                <button onClick={add} className="flex-1 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold">儲存</button>
+                <button onClick={() => setShowAdd(false)} className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-400 rounded-xl text-sm font-bold">取消</button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {saved.length === 0 && !showAdd && (
+        <div className="flex flex-col items-center py-8 text-milk-tea-300">
+          <Compass className="w-10 h-10 opacity-30 mb-2" />
+          <p className="text-xs">尚無收藏景點</p>
         </div>
-      ))}
+      )}
+
+      {saved.map(s => {
+        const ci = catInfo(s.category);
+        return (
+          <div key={s.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm flex items-center space-x-3">
+            <div className="w-11 h-11 rounded-xl bg-accent-coral/20 flex items-center justify-center flex-shrink-0 text-xl">
+              {ci.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-milk-tea-900 truncate">{s.name}</p>
+              <p className="text-[10px] text-milk-tea-400 mt-0.5">{ci.label}</p>
+              {s.notes && <p className="text-[10px] text-milk-tea-300 truncate mt-0.5">{s.notes}</p>}
+            </div>
+            <button onClick={() => remove(s.id)} className="text-milk-tea-200 hover:text-red-400 transition-colors flex-shrink-0">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -390,7 +485,7 @@ export const Home: React.FC<HomeProps> = ({ trip, onUpdateTrip, onNavigate }) =>
       {/* Header */}
       <header className="px-6 pt-10 pb-4 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-milk-tea-900">Cindy的王國</h1>
+          <h1 className="text-base font-extrabold tracking-tight text-milk-tea-900">🎀✨Cindy's Paradise☁️💖</h1>
           <p className="text-milk-tea-400 text-xs font-medium mt-0.5">私人旅遊空間 👑</p>
         </div>
         <div className="flex space-x-2">
@@ -517,9 +612,9 @@ export const Home: React.FC<HomeProps> = ({ trip, onUpdateTrip, onNavigate }) =>
               </div>
             )}
 
-            {activeSection === 'accommodation' && <AccommodationSection trip={trip} />}
+            {activeSection === 'accommodation' && <AccommodationSection trip={trip} onUpdateTrip={onUpdateTrip} />}
             {activeSection === 'merchants'     && <MerchantsSection trip={trip} onUpdateTrip={onUpdateTrip} />}
-            {activeSection === 'attractions'   && <AttractionsSection trip={trip} />}
+            {activeSection === 'attractions'   && <AttractionsSection trip={trip} onUpdateTrip={onUpdateTrip} />}
           </motion.div>
         </AnimatePresence>
 

@@ -91,8 +91,8 @@ export const PasswordGate: React.FC<PasswordGateProps> = ({ onSuccess }) => {
           >
             <span className="text-4xl">👑</span>
           </motion.div>
-          <h1 className="text-2xl font-extrabold text-milk-tea-900 tracking-tight">
-            Cindy的王國
+          <h1 className="text-lg font-extrabold text-milk-tea-900 tracking-tight">
+            🎀✨Cindy's Paradise☁️💖
           </h1>
           <p className="text-sm text-milk-tea-400 mt-1">私人旅遊空間</p>
         </div>
