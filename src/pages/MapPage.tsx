@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Navigation, Car, Clock, Ruler, Banknote, Loader2, AlertCircle } from 'lucide-react';
 import { useUIStore } from '../stores/uiStore';
 import { fetchKakaoCarRoute, vertexesToLatLng, KakaoRoute } from '../services/kakaoDirectionsService';
+import { fetchTransitRoute, OdsayPath } from '../services/odsayService';
 import { openKakaoMapDirections, openNaverMapDirections } from '../utils/deepLink';
 
 const JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
@@ -53,9 +54,10 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
   const mapRef   = useRef<HTMLDivElement>(null);
   const kakaoMap = useRef<any>(null);
 
-  const [sdkReady, setSdkReady]     = useState(false);
-  const [sdkError, setSdkError]     = useState(false);
-  const [carRoute, setCarRoute]     = useState<KakaoRoute | null>(null);
+  const [sdkReady, setSdkReady]         = useState(false);
+  const [sdkError, setSdkError]         = useState(false);
+  const [carRoute, setCarRoute]         = useState<KakaoRoute | null>(null);
+  const [transitRoute, setTransitRoute] = useState<OdsayPath | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
 
   const req  = mapRouteRequest;
@@ -120,54 +122,102 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     bounds.extend(new window.kakao.maps.LatLng(destination.lat, destination.lng));
     map.setBounds(bounds);
 
-    // 大眾運輸模式：畫虛線連接起終點作為視覺提示
+  }, [sdkReady, req, mode]);
+
+  // ── 路線查詢：駕車/步行用 Kakao，大眾運輸用 ODsay ─────────
+  useEffect(() => {
+    if (!req || !sdkReady || !kakaoMap.current) return;
+
+    const map = kakaoMap.current;
+    setRouteLoading(true);
+
     if (IS_TRANSIT(mode)) {
-      drawDashedLine(map, origin, destination, MODE_COLOR[mode] ?? '#8896F5');
+      // 大眾運輸：ODsay API 取得實際路徑
+      fetchTransitRoute(req.origin, req.destination).then((result) => {
+        setRouteLoading(false);
+        if (!result || !result.paths.length) {
+          // API 不可用時 fallback 虛線
+          drawDashedLine(map, req.origin, req.destination, MODE_COLOR[mode] ?? '#8896F5');
+          return;
+        }
+        const bestPath = result.paths[0];
+        setTransitRoute(bestPath);
+        drawOdsayRoute(map, bestPath);
+      });
+    } else {
+      // 駕車/步行：Kakao Directions API
+      fetchKakaoCarRoute(req.origin, req.destination).then((route) => {
+        setCarRoute(route);
+        setRouteLoading(false);
+        if (!route) {
+          drawDashedLine(map, req.origin, req.destination, MODE_COLOR[mode] ?? '#E8A830');
+          return;
+        }
+        const allPoints: any[] = [];
+        for (const road of route.roads) {
+          for (const p of vertexesToLatLng(road.vertexes)) {
+            allPoints.push(new window.kakao.maps.LatLng(p.lat, p.lng));
+          }
+        }
+        if (allPoints.length > 0) {
+          const polyline = new window.kakao.maps.Polyline({
+            path: allPoints,
+            strokeWeight: 5,
+            strokeColor: MODE_COLOR[mode] ?? '#3DBDAD',
+            strokeOpacity: 0.85,
+            strokeStyle: 'solid',
+          });
+          polyline.setMap(map);
+        }
+      });
     }
   }, [sdkReady, req, mode]);
 
-  // ── 駕車/步行 → 查 Kakao Directions 並畫路線 ─────────────
-  useEffect(() => {
-    if (!req || !sdkReady || IS_TRANSIT(mode)) return;
-    if (!kakaoMap.current) return;
+  // ── 輔助：依 ODsay 各分段畫路線 ─────────────────────────
+  function drawOdsayRoute(map: any, path: OdsayPath) {
+    const bounds = new window.kakao.maps.LatLngBounds();
 
-    console.log('[MapPage] Fetching route for mode:', mode);
-    setRouteLoading(true);
-    fetchKakaoCarRoute(req.origin, req.destination).then((route) => {
-      console.log('[MapPage] Route result:', route);
-      setCarRoute(route);
-      setRouteLoading(false);
+    for (const sub of path.subPath) {
+      const stations = sub.passStopList?.stations ?? [];
 
-      const map = kakaoMap.current;
-      if (!map) return;
-
-      if (!route) {
-        // API 失敗 → fallback 直線
-        console.warn('[MapPage] No route from API, drawing fallback line');
-        drawDashedLine(map, req.origin, req.destination, MODE_COLOR[mode] ?? '#E8A830');
-        return;
-      }
-
-      // 畫實際路線折線
-      const allPoints: any[] = [];
-      for (const road of route.roads) {
-        const pts = vertexesToLatLng(road.vertexes);
-        for (const p of pts) {
-          allPoints.push(new window.kakao.maps.LatLng(p.lat, p.lng));
+      if (sub.trafficType === 3) {
+        // 步行段：灰色虛線
+        const sx = sub.startX, sy = sub.startY, ex = sub.endX, ey = sub.endY;
+        if (sx && sy && ex && ey) {
+          const from = new window.kakao.maps.LatLng(sy, sx);
+          const to   = new window.kakao.maps.LatLng(ey, ex);
+          new window.kakao.maps.Polyline({
+            path: [from, to],
+            strokeWeight: 2,
+            strokeColor: '#9CA3AF',
+            strokeOpacity: 0.7,
+            strokeStyle: 'dashed',
+          }).setMap(map);
+          bounds.extend(from);
+          bounds.extend(to);
         }
-      }
-      if (allPoints.length > 0) {
-        const polyline = new window.kakao.maps.Polyline({
-          path: allPoints,
-          strokeWeight: 5,
-          strokeColor: MODE_COLOR[mode] ?? '#3DBDAD',
-          strokeOpacity: 0.85,
-          strokeStyle: 'solid',
+      } else if (stations.length >= 2) {
+        // 地鐵(1) 或 公車(2)：依停靠站連線
+        const color  = sub.trafficType === 1 ? '#9B8FF5' : '#8896F5';
+        const weight = sub.trafficType === 1 ? 6 : 5;
+        const points = stations.map(s => {
+          const ll = new window.kakao.maps.LatLng(s.y, s.x);
+          bounds.extend(ll);
+          return ll;
         });
-        polyline.setMap(map);
+        new window.kakao.maps.Polyline({
+          path: points,
+          strokeWeight: weight,
+          strokeColor: color,
+          strokeOpacity: 0.9,
+          strokeStyle: 'solid',
+        }).setMap(map);
       }
-    });
-  }, [sdkReady, req, mode]);
+    }
+
+    // 自動縮放以包含整條路線
+    if (!bounds.isEmpty()) map.setBounds(bounds, 60);
+  }
 
   // ── 輔助：畫虛線 ─────────────────────────────────────────
   function drawDashedLine(
@@ -334,7 +384,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
       >
         {/* 路線統計 */}
         {IS_TRANSIT(mode) ? (
-          <TransitInfoPanel origin={origin} destination={destination} mode={mode} />
+          <TransitInfoPanel origin={origin} destination={destination} mode={mode} route={transitRoute} loading={routeLoading} />
         ) : (
           <CarInfoPanel route={carRoute} loading={routeLoading} mode={mode} />
         )}
@@ -395,24 +445,80 @@ const TransitInfoPanel: React.FC<{
   origin: { name: string };
   destination: { name: string };
   mode: string;
-}> = ({ mode }) => (
-  <div className="flex items-center space-x-3 py-1">
-    <div
-      className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-      style={{ backgroundColor: MODE_COLOR[mode] + '20' }}
-    >
-      <Navigation className="w-5 h-5" style={{ color: MODE_COLOR[mode] }} />
+  route: OdsayPath | null;
+  loading: boolean;
+}> = ({ mode, route, loading }) => {
+  if (loading) {
+    return (
+      <div className="flex items-center space-x-2 py-2 text-milk-tea-400">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span className="text-xs">正在查詢路線…</span>
+      </div>
+    );
+  }
+
+  if (!route) {
+    return (
+      <div className="flex items-center space-x-3 py-1">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: MODE_COLOR[mode] + '20' }}
+        >
+          <Navigation className="w-5 h-5" style={{ color: MODE_COLOR[mode] }} />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-milk-tea-800">
+            {mode === 'bus' ? '公車路線' : '地鐵路線'}
+          </p>
+          <p className="text-xs text-milk-tea-400 mt-0.5">
+            點下方按鈕，在 Kakao Map 查詢即時班次與轉乘資訊
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const { totalTime, payment, busTransitCount, subwayTransitCount } = route.info;
+  const transfers = busTransitCount + subwayTransitCount - 1;
+
+  // 分段摘要：地鐵/公車 label
+  const legs = route.subPath
+    .filter(s => s.trafficType !== 3)
+    .map(s => {
+      const lane = s.lane?.[0];
+      if (s.trafficType === 1) return lane?.name ?? '地鐵';
+      return `公車 ${lane?.busNo ?? ''}`.trim();
+    });
+
+  return (
+    <div className="space-y-2 py-1">
+      {/* 統計數字 */}
+      <div className="grid grid-cols-3 gap-2">
+        <Stat icon={<Clock className="w-3 h-3" />} label="時間" value={`${totalTime} 分`} />
+        <Stat icon={<Banknote className="w-3 h-3" />} label="票價" value={`₩${payment.toLocaleString()}`} />
+        <Stat
+          icon={<Navigation className="w-3 h-3" />}
+          label="轉乘"
+          value={transfers > 0 ? `${transfers} 次` : '直達'}
+        />
+      </div>
+      {/* 路線標籤 */}
+      {legs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {legs.map((leg, i) => (
+            <span
+              key={i}
+              className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+              style={{ backgroundColor: MODE_COLOR[mode] }}
+            >
+              {leg}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
-    <div>
-      <p className="text-sm font-bold text-milk-tea-800">
-        {mode === 'bus' ? '公車路線' : '地鐵路線'}
-      </p>
-      <p className="text-xs text-milk-tea-400 mt-0.5">
-        點下方按鈕，在 Kakao Map 查詢即時班次與轉乘資訊
-      </p>
-    </div>
-  </div>
-);
+  );
+};
 
 // ── 汽車路線資訊面板 ─────────────────────────────────────────
 

@@ -233,6 +233,34 @@ export default {
       }
     }
 
+    // GET /odsay/transit → ODsay 大眾運輸路線代理
+    if (path === '/odsay/transit') {
+      const sx = url.searchParams.get('sx');   // start longitude
+      const sy = url.searchParams.get('sy');   // start latitude
+      const ex = url.searchParams.get('ex');   // end longitude
+      const ey = url.searchParams.get('ey');   // end latitude
+
+      if (!sx || !sy || !ex || !ey) return json({ error: 'Missing coordinates' }, 400);
+      if (!env.ODSAY_API_KEY) return json({ error: 'ODSAY_API_KEY not configured' }, 503);
+
+      const odsayUrl =
+        `https://api.odsay.com/v1/api/searchPubTransPathT` +
+        `?SX=${sx}&SY=${sy}&EX=${ex}&EY=${ey}` +
+        `&apiKey=${encodeURIComponent(env.ODSAY_API_KEY)}`;
+
+      try {
+        const odsayRes = await fetch(odsayUrl, { signal: AbortSignal.timeout(8000) });
+        if (!odsayRes.ok) {
+          const errText = await odsayRes.text();
+          return json({ error: `ODsay API error: ${odsayRes.status}`, detail: errText }, odsayRes.status);
+        }
+        const data = await odsayRes.json();
+        return json(data, 200, { 'Cache-Control': 'public, max-age=120' });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
     // GET / → 匯率
     const from = (url.searchParams.get('from') || 'TWD').toUpperCase();
     const to   = (url.searchParams.get('to')   || 'KRW').toUpperCase();
