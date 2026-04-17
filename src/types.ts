@@ -17,6 +17,13 @@ export interface Participant {
   color: string;
 }
 
+export interface MerchantCategory {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+}
+
 export interface Expense {
   id: string;
   title: string;
@@ -26,6 +33,7 @@ export interface Expense {
   splitWithIds: string[]; // IDs of participants sharing the cost
   date: string;
   category: string;
+  isShared?: boolean; // true/undefined = shared group expense, false = private personal expense
   customAmounts?: { [participantId: string]: number }; // Optional custom split
 }
 
@@ -85,4 +93,5 @@ export interface Trip {
   days: DayPlan[];
   participants: Participant[];
   expenses: Expense[];
+  merchantCategories?: MerchantCategory[];
 }

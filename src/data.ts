@@ -28,7 +28,8 @@ export const SAMPLE_TRIP: Trip = {
       payerId: 'p1',
       splitWithIds: ['p1', 'p2', 'p3'],
       date: relativeDate(1),
-      category: 'attraction'
+      category: 'attraction',
+      isShared: true,
     },
     {
       id: 'e2',
@@ -38,8 +39,13 @@ export const SAMPLE_TRIP: Trip = {
       payerId: 'p2',
       splitWithIds: ['p1', 'p2', 'p3'],
       date: relativeDate(1),
-      category: 'restaurant'
+      category: 'restaurant',
+      isShared: true,
     }
+  ],
+  merchantCategories: [
+    { id: 'mc1', name: '咖啡廳', emoji: '☕', color: '#FFD4B8' },
+    { id: 'mc2', name: '衣服', emoji: '👗', color: '#AAB6FB' },
   ],
   days: [
     {
