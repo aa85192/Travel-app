@@ -16,6 +16,8 @@ const COLORS = ['#FFACBB', '#AAB6FB', '#99F2E6', '#FFFEE1', '#FFD4B8', '#C5B8FF'
 
 export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   const [activeView, setActiveView] = useState<'expenses' | 'settlement' | 'participants'>('expenses');
+  /* 共用 / 私人 篩選 */
+  const [expenseScope, setExpenseScope] = useState<'shared' | 'personal'>('shared');
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddParticipant, setShowAddParticipant] = useState(false);
   const [rateData, setRateData] = useState<RateResult | null>(null);
@@ -31,7 +33,8 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
     payerId: trip.participants[0]?.id || '',
     splitWithIds: trip.participants.map(p => p.id),
     date: new Date().toISOString().split('T')[0],
-    category: 'other'
+    category: 'other',
+    isShared: true,
   });
 
   // New Participant State
@@ -145,26 +148,22 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
     });
   };
 
-  // Calculate balances for settlement
+  /* 依篩選過濾費用 */
+  const filteredExpenses = trip.expenses.filter(e =>
+    expenseScope === 'shared' ? e.isShared !== false : e.isShared === false
+  );
+
+  // Calculate balances using ONLY shared expenses
   const calculateBalances = () => {
     const balances: { [id: string]: number } = {};
     trip.participants.forEach(p => balances[p.id] = 0);
-
-    trip.expenses.forEach(exp => {
-      // For simplicity, we assume all expenses are in the same currency for settlement
-      // In a real app, we'd convert them all to a base currency using `rates`
+    trip.expenses.filter(e => e.isShared !== false).forEach(exp => {
       const amount = exp.amount;
-      
-      // Payer gets credit
       balances[exp.payerId] += amount;
-      
-      // Splitters get debt
       const splitCount = exp.splitWithIds.length;
       if (splitCount > 0) {
         const share = amount / splitCount;
-        exp.splitWithIds.forEach(id => {
-          balances[id] -= share;
-        });
+        exp.splitWithIds.forEach(id => { balances[id] -= share; });
       }
     });
     return balances;
@@ -175,8 +174,35 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   return (
     <div className="pb-24 min-h-screen bg-milk-tea-50">
       <header className="px-6 pt-8 pb-4">
-        <h1 className="text-2xl font-extrabold">分帳系統</h1>
-        <div className="flex space-x-4 mt-4 border-b border-milk-tea-200">
+        <h1 className="text-2xl font-extrabold">記帳</h1>
+
+        {/* 共用 / 私人 切換（只在支出記錄頁顯示） */}
+        {activeView === 'expenses' && (
+          <div className="flex space-x-2 mt-3">
+            <button
+              onClick={() => setExpenseScope('shared')}
+              className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                expenseScope === 'shared'
+                  ? 'bg-milk-tea-500 text-white shadow-sm'
+                  : 'bg-white text-milk-tea-400 border border-milk-tea-200'
+              }`}
+            >
+              共用
+            </button>
+            <button
+              onClick={() => setExpenseScope('personal')}
+              className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                expenseScope === 'personal'
+                  ? 'bg-[#C5B8FF] text-white shadow-sm'
+                  : 'bg-white text-milk-tea-400 border border-milk-tea-200'
+              }`}
+            >
+              私人
+            </button>
+          </div>
+        )}
+
+        <div className="flex space-x-4 mt-3 border-b border-milk-tea-200">
           {['expenses', 'settlement', 'participants'].map((view) => (
             <button
               key={view}
@@ -247,21 +273,28 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
               </motion.button>
             </div>
 
-            {trip.expenses.length === 0 && (
+            {filteredExpenses.length === 0 && (
               <div className="text-center py-10 text-milk-tea-300">
                 <Wallet className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                <p>尚無支出紀錄</p>
+                <p>{expenseScope === 'shared' ? '尚無共用支出紀錄' : '尚無私人支出紀錄'}</p>
               </div>
             )}
 
-            {trip.expenses.map(exp => {
+            {filteredExpenses.map(exp => {
               const converted = convertToDisplay(exp.amount, exp.currency);
               const isConverted = converted.label !== exp.currency.toUpperCase();
               return (
                 <div key={exp.id} className="bg-white p-4 rounded-xl shadow-sm border border-milk-tea-100 flex justify-between items-center">
                   <div>
-                    <h3 className="font-bold text-milk-tea-900">{exp.title}</h3>
-                    <p className="text-xs text-milk-tea-400">{exp.date} ・ {trip.participants.find(p => p.id === exp.payerId)?.name} 付款</p>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-bold text-milk-tea-900">{exp.title}</h3>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                        exp.isShared !== false ? 'bg-milk-tea-100 text-milk-tea-500' : 'bg-[#C5B8FF]/30 text-[#7C5CBF]'
+                      }`}>
+                        {exp.isShared !== false ? '共用' : '私人'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-milk-tea-400">{exp.date} ・ {trip.participants.find(p => p.id === exp.payerId)?.name || '本人'} 付款</p>
                   </div>
                   <div className="text-right flex items-center space-x-3">
                     <div>
@@ -276,7 +309,9 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                           原 {exp.currency} {exp.amount.toLocaleString()}
                         </p>
                       )}
-                      <p className="text-[10px] text-milk-tea-400">分給 {exp.splitWithIds.length} 人</p>
+                      {exp.isShared !== false && (
+                        <p className="text-[10px] text-milk-tea-400">分給 {exp.splitWithIds.length} 人</p>
+                      )}
                     </div>
                     <button onClick={() => handleDeleteExpense(exp.id)} className="text-accent-error opacity-50 hover:opacity-100">
                       <Trash2 className="w-4 h-4" />
@@ -438,10 +473,35 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
               </div>
               
               <div className="space-y-4">
+                {/* 共用 / 私人 切換 */}
+                <div>
+                  <label className="text-xs font-bold text-milk-tea-400 block mb-2">費用類型</label>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewExpense({ ...newExpense, isShared: true, splitWithIds: trip.participants.map(p => p.id) })}
+                      className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                        newExpense.isShared !== false ? 'bg-milk-tea-500 text-white' : 'bg-milk-tea-100 text-milk-tea-400'
+                      }`}
+                    >
+                      共用（分帳）
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewExpense({ ...newExpense, isShared: false, splitWithIds: [] })}
+                      className={`flex-1 py-2 rounded-full text-sm font-bold transition-all ${
+                        newExpense.isShared === false ? 'bg-[#C5B8FF] text-white' : 'bg-milk-tea-100 text-milk-tea-400'
+                      }`}
+                    >
+                      私人
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs font-bold text-milk-tea-400 block mb-1">支出名稱</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={newExpense.title}
                     onChange={e => setNewExpense({...newExpense, title: e.target.value})}
                     className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl p-3"
@@ -472,22 +532,25 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-milk-tea-400 block mb-1">誰付的？</label>
-                  <div className="flex space-x-2 overflow-x-auto pb-2">
-                    {trip.participants.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => setNewExpense({...newExpense, payerId: p.id})}
-                        className={`flex-shrink-0 px-4 py-2 rounded-full border transition-all ${
-                          newExpense.payerId === p.id ? 'bg-milk-tea-500 text-white border-milk-tea-500' : 'bg-white text-milk-tea-400 border-milk-tea-200'
-                        }`}
-                      >
-                        {p.emoji} {p.name}
-                      </button>
-                    ))}
+                {newExpense.isShared !== false && (
+                  <div>
+                    <label className="text-xs font-bold text-milk-tea-400 block mb-1">誰付的？</label>
+                    <div className="flex space-x-2 overflow-x-auto pb-2">
+                      {trip.participants.map(p => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setNewExpense({...newExpense, payerId: p.id})}
+                          className={`flex-shrink-0 px-4 py-2 rounded-full border transition-all ${
+                            newExpense.payerId === p.id ? 'bg-milk-tea-500 text-white border-milk-tea-500' : 'bg-white text-milk-tea-400 border-milk-tea-200'
+                          }`}
+                        >
+                          {p.emoji} {p.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 <button 
                   onClick={handleAddExpense}
                   className="w-full py-4 bg-milk-tea-500 text-white rounded-xl font-bold shadow-lg mt-4"

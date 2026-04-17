@@ -89,12 +89,12 @@ export const PasswordGate: React.FC<PasswordGateProps> = ({ onSuccess }) => {
             transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             className="w-20 h-20 mx-auto mb-4 bg-milk-tea-500 rounded-3xl flex items-center justify-center shadow-glow"
           >
-            <span className="text-4xl">🧋</span>
+            <span className="text-4xl">👑</span>
           </motion.div>
           <h1 className="text-2xl font-extrabold text-milk-tea-900 tracking-tight">
-            奶茶旅伴
+            Cindy的王國
           </h1>
-          <p className="text-sm text-milk-tea-400 mt-1">MilkTea Travel</p>
+          <p className="text-sm text-milk-tea-400 mt-1">私人旅遊空間</p>
         </div>
 
         {/* 密碼卡片 */}
