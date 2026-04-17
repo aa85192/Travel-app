@@ -17,21 +17,21 @@ export interface Participant {
   color: string;
 }
 
-export interface MerchantCategory {
+export interface CollectionLink {
+  id: string;
+  name: string;
+  url: string;
+}
+
+export interface CollectionCategory {
   id: string;
   name: string;
   emoji: string;
   color: string;
+  links?: CollectionLink[];
 }
 
-export interface SavedSpot {
-  id: string;
-  name: string;
-  address?: string;
-  photo?: string;
-  category: SpotCategory;
-  notes?: string;
-}
+export type MerchantCategory = CollectionCategory;
 
 export interface Expense {
   id: string;
@@ -102,6 +102,7 @@ export interface Trip {
   days: DayPlan[];
   participants: Participant[];
   expenses: Expense[];
-  merchantCategories?: MerchantCategory[];
-  savedSpots?: SavedSpot[];
+  merchantCategories?: CollectionCategory[];
+  attractionCategories?: CollectionCategory[];
+  savedSpots?: { id: string; name: string; address?: string; category: string }[];
 }

@@ -223,11 +223,57 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     overlay.setMap(map);
   }
 
+  // ── 無路線請求時：預設顯示釜山地圖 ─────────────────────────
+  useEffect(() => {
+    if (req || !sdkReady || !mapRef.current) return;
+    // 釜山市中心
+    const BUSAN = { lat: 35.1795543, lng: 129.0756416 };
+    const map = new window.kakao.maps.Map(mapRef.current, {
+      center: new window.kakao.maps.LatLng(BUSAN.lat, BUSAN.lng),
+      level: 5,
+    });
+    kakaoMap.current = map;
+  }, [sdkReady, req]);
+
   if (!req) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-milk-tea-400">
-        <p className="text-sm">沒有路線資料</p>
-        <button onClick={onBack} className="mt-4 text-milk-tea-500 underline text-sm">返回</button>
+      <div className="flex flex-col h-screen bg-white">
+        {/* 標題列 */}
+        <div className="flex items-center px-4 py-3 bg-white border-b border-milk-tea-100 z-10 flex-shrink-0">
+          <button onClick={onBack} className="mr-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-milk-tea-100 transition-colors">
+            <ArrowLeft className="w-5 h-5 text-milk-tea-600" />
+          </button>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-bold text-milk-tea-900">探索釜山</span>
+            <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100">Busan, Korea</span>
+          </div>
+        </div>
+
+        {/* 地圖 */}
+        <div className="flex-1 relative overflow-hidden">
+          {!sdkError ? (
+            <div ref={mapRef} className="w-full h-full" />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full space-y-4 p-6 text-center">
+              <div className="text-5xl">🗺️</div>
+              <p className="text-sm font-bold text-milk-tea-700">無法載入 Kakao Map</p>
+              <p className="text-xs text-milk-tea-400">需要設定 VITE_KAKAO_JS_KEY</p>
+              <a
+                href="https://map.kakao.com/?q=부산"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 bg-[#FAE100] text-[#3C1E1E] rounded-full font-bold text-sm shadow-sm"
+              >
+                在 Kakao Map 探索釜山
+              </a>
+            </div>
+          )}
+          {!sdkReady && !sdkError && (
+            <div className="absolute inset-0 flex items-center justify-center bg-milk-tea-50/80">
+              <Loader2 className="w-8 h-8 animate-spin text-milk-tea-400" />
+            </div>
+          )}
+        </div>
       </div>
     );
   }

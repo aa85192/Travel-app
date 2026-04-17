@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useRef } from 'react';
 import { Download, Upload, MapPin, ChevronRight, Wallet, Plane,
-  BedDouble, Store, Compass, Edit2, Check, X, Plus, Trash2 } from 'lucide-react';
+  BedDouble, Store, Compass, Edit2, Check, X, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trip, MerchantCategory, SavedSpot, SpotCategory } from '../types';
+import { Trip, CollectionCategory, CollectionLink } from '../types';
 import { useUIStore } from '../stores/uiStore';
 
 interface HomeProps {
@@ -182,109 +182,177 @@ function DonutChart({ data, total }: { data: { color: string; percent: number }[
   );
 }
 
-/* ── 商家分類 ── */
-function MerchantsSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t: Trip) => void }) {
-  const categories: MerchantCategory[] = trip.merchantCategories ?? [
-    { id: 'mc1', name: '咖啡廳', emoji: '☕', color: '#FFD4B8' },
-    { id: 'mc2', name: '衣服',   emoji: '👗', color: '#AAB6FB' },
-  ];
-  const [editing, setEditing] = useState<{ id: string; name: string; emoji: string } | null>(null);
-  const [addMode, setAddMode] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newEmoji, setNewEmoji] = useState('🏪');
+/* ── 平台偵測 ── */
+function detectPlatform(url: string): { emoji: string; label: string } {
+  const u = url.toLowerCase();
+  if (u.includes('instagram.com') || u.includes('instagr.am')) return { emoji: '📸', label: 'Instagram' };
+  if (u.includes('xiaohongshu.com') || u.includes('xhslink.com') || u.includes('rednote')) return { emoji: '📕', label: '小紅書' };
+  if (u.includes('threads.net')) return { emoji: '🧵', label: 'Threads' };
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return { emoji: '▶️', label: 'YouTube' };
+  return { emoji: '🔗', label: '連結' };
+}
 
+/* ── 通用連結收藏區（景點 / 商家共用）── */
+function CollectionSection({
+  categories, onUpdate, hint,
+}: {
+  categories: CollectionCategory[];
+  onUpdate: (cats: CollectionCategory[]) => void;
+  hint: string;
+}) {
   const PALETTE = ['#FFD4B8','#AAB6FB','#99F2E6','#FFFEE1','#C5B8FF','#B8DCFF','#FFE4A0','#FFACBB'];
-  const save = (id: string) => {
-    if (!editing) return;
-    onUpdateTrip({ ...trip, merchantCategories: categories.map(c => c.id === id ? { ...c, name: editing.name, emoji: editing.emoji } : c) });
-    setEditing(null);
+  const [openCatId, setOpenCatId] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState<{ id: string; name: string; emoji: string } | null>(null);
+  const [addCatMode, setAddCatMode] = useState(false);
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatEmoji, setNewCatEmoji] = useState('📌');
+  const [addLinkFor, setAddLinkFor] = useState<string | null>(null);
+  const [newLinkName, setNewLinkName] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+
+  const addCat = () => {
+    if (!newCatName.trim()) return;
+    onUpdate([...categories, { id: `cat_${Date.now()}`, name: newCatName.trim(), emoji: newCatEmoji, color: PALETTE[categories.length % PALETTE.length], links: [] }]);
+    setNewCatName(''); setNewCatEmoji('📌'); setAddCatMode(false);
   };
-  const remove = (id: string) => onUpdateTrip({ ...trip, merchantCategories: categories.filter(c => c.id !== id) });
-  const add = () => {
-    if (!newName.trim()) return;
-    onUpdateTrip({ ...trip, merchantCategories: [...categories, { id: `mc_${Date.now()}`, name: newName.trim(), emoji: newEmoji, color: PALETTE[categories.length % PALETTE.length] }] });
-    setNewName(''); setNewEmoji('🏪'); setAddMode(false);
+  const removeCat = (id: string) => onUpdate(categories.filter(c => c.id !== id));
+  const saveCatEdit = () => {
+    if (!editingCat) return;
+    onUpdate(categories.map(c => c.id === editingCat.id ? { ...c, name: editingCat.name, emoji: editingCat.emoji } : c));
+    setEditingCat(null);
   };
+  const addLink = (catId: string) => {
+    if (!newLinkName.trim() || !newLinkUrl.trim()) return;
+    const link: CollectionLink = { id: `lnk_${Date.now()}`, name: newLinkName.trim(), url: newLinkUrl.trim() };
+    onUpdate(categories.map(c => c.id === catId ? { ...c, links: [...(c.links ?? []), link] } : c));
+    setNewLinkName(''); setNewLinkUrl(''); setAddLinkFor(null);
+  };
+  const removeLink = (catId: string, linkId: string) =>
+    onUpdate(categories.map(c => c.id === catId ? { ...c, links: (c.links ?? []).filter(l => l.id !== linkId) } : c));
 
   return (
-    <div className="space-y-3">
-      <p className="text-[10px] text-milk-tea-300 text-center">點選分類可未來加入商家資訊</p>
-      <div className="grid grid-cols-2 gap-3">
-        {categories.map(cat => (
-          <div key={cat.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm relative">
-            <button onClick={() => remove(cat.id)} className="absolute top-2 right-2 text-milk-tea-200 hover:text-red-400 transition-colors">
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-            {editing?.id === cat.id ? (
-              <div className="space-y-1.5">
-                <input value={editing.emoji} onChange={e => setEditing({ ...editing, emoji: e.target.value })}
-                  className="w-10 text-center text-xl bg-milk-tea-50 border border-milk-tea-100 rounded-lg p-1" maxLength={2} />
-                <input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })}
-                  className="w-full text-sm bg-milk-tea-50 border border-milk-tea-100 rounded-lg px-2 py-1" autoFocus />
-                <div className="flex space-x-1.5 pt-1">
-                  <button onClick={() => save(cat.id)} className="flex-1 py-1 bg-milk-tea-500 text-white rounded-lg flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => setEditing(null)} className="flex-1 py-1 bg-milk-tea-100 text-milk-tea-400 rounded-lg flex items-center justify-center">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
+    <div className="space-y-2">
+      <p className="text-[10px] text-milk-tea-400 pb-1">{hint}</p>
+
+      {categories.map(cat => (
+        <div key={cat.id} className="bg-white rounded-2xl border border-milk-tea-100 shadow-sm overflow-hidden">
+          {/* 分類標頭 */}
+          <div className="flex items-center px-4 py-3 space-x-2">
+            {editingCat?.id === cat.id ? (
+              <>
+                <input value={editingCat.emoji} onChange={e => setEditingCat({ ...editingCat, emoji: e.target.value })}
+                  className="w-10 text-center text-lg bg-milk-tea-50 border border-milk-tea-100 rounded-xl p-1 flex-shrink-0" maxLength={2} />
+                <input value={editingCat.name} onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
+                  className="flex-1 text-sm bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-1.5" autoFocus />
+                <button onClick={saveCatEdit} className="p-1.5 bg-milk-tea-500 text-white rounded-lg flex-shrink-0"><Check className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setEditingCat(null)} className="p-1.5 bg-milk-tea-100 text-milk-tea-400 rounded-lg flex-shrink-0"><X className="w-3.5 h-3.5" /></button>
+              </>
             ) : (
               <>
-                <div className="text-2xl mb-1.5">{cat.emoji}</div>
-                <p className="text-sm font-bold text-milk-tea-800">{cat.name}</p>
-                <p className="text-[10px] text-milk-tea-300 mt-0.5">尚無商家</p>
-                <button onClick={() => setEditing({ id: cat.id, name: cat.name, emoji: cat.emoji })}
-                  className="flex items-center space-x-0.5 text-[10px] text-milk-tea-300 hover:text-milk-tea-500 mt-1.5 transition-colors">
-                  <Edit2 className="w-2.5 h-2.5" /><span>編輯</span>
+                <button onClick={() => setOpenCatId(openCatId === cat.id ? null : cat.id)}
+                  className="flex items-center flex-1 space-x-3 text-left min-w-0">
+                  <span className="text-xl flex-shrink-0">{cat.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-milk-tea-900">{cat.name}</p>
+                    <p className="text-[10px] text-milk-tea-400">{cat.links?.length ?? 0} 個連結</p>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 text-milk-tea-400 ml-auto flex-shrink-0 transition-transform duration-200 ${openCatId === cat.id ? 'rotate-180' : ''}`} />
                 </button>
+                <button onClick={() => setEditingCat({ id: cat.id, name: cat.name, emoji: cat.emoji })}
+                  className="ml-1 text-milk-tea-300 hover:text-milk-tea-500 transition-colors flex-shrink-0"><Edit2 className="w-3.5 h-3.5" /></button>
+                <button onClick={() => removeCat(cat.id)}
+                  className="ml-1 text-milk-tea-200 hover:text-red-400 transition-colors flex-shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
               </>
             )}
           </div>
-        ))}
-        {addMode ? (
-          <div className="bg-white rounded-2xl p-4 border border-milk-tea-200 shadow-sm space-y-1.5">
-            <input value={newEmoji} onChange={e => setNewEmoji(e.target.value)} maxLength={2}
-              className="w-10 text-center text-xl bg-milk-tea-50 border border-milk-tea-100 rounded-lg p-1" />
-            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="分類名稱" autoFocus
-              className="w-full text-sm bg-milk-tea-50 border border-milk-tea-100 rounded-lg px-2 py-1" />
-            <div className="flex space-x-1.5 pt-1">
-              <button onClick={add} className="flex-1 py-1 bg-milk-tea-500 text-white rounded-lg flex items-center justify-center">
-                <Check className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={() => { setAddMode(false); setNewName(''); }} className="flex-1 py-1 bg-milk-tea-100 text-milk-tea-400 rounded-lg flex items-center justify-center">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+
+          {/* 連結列表（展開） */}
+          <AnimatePresence>
+            {openCatId === cat.id && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="overflow-hidden">
+                <div className="border-t border-milk-tea-100 px-4 py-3 space-y-2">
+                  {(cat.links ?? []).map(link => {
+                    const p = detectPlatform(link.url);
+                    return (
+                      <div key={link.id} className="flex items-center space-x-2.5">
+                        <span className="text-lg flex-shrink-0">{p.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-milk-tea-800 truncate">{link.name}</p>
+                          <p className="text-[9px] text-milk-tea-300 truncate font-mono">{link.url}</p>
+                        </div>
+                        <a href={link.url} target="_blank" rel="noopener noreferrer"
+                          className="flex-shrink-0 px-2.5 py-1 bg-milk-tea-50 text-milk-tea-500 rounded-full text-[10px] font-bold border border-milk-tea-200 hover:bg-milk-tea-100 transition-colors">
+                          開啟
+                        </a>
+                        <button onClick={() => removeLink(cat.id, link.id)}
+                          className="flex-shrink-0 text-milk-tea-200 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
+                    );
+                  })}
+
+                  {addLinkFor === cat.id ? (
+                    <div className="space-y-2 pt-1 border-t border-milk-tea-50 mt-1">
+                      <input value={newLinkName} onChange={e => setNewLinkName(e.target.value)} placeholder="名稱（例：釜山網紅咖啡廳）" autoFocus
+                        className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-xs" />
+                      <input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} placeholder="貼上 IG / 小紅書 / Threads 連結"
+                        className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-[11px] font-mono" />
+                      <div className="flex space-x-2">
+                        <button onClick={() => addLink(cat.id)} className="flex-1 py-1.5 bg-milk-tea-500 text-white rounded-xl text-xs font-bold">儲存</button>
+                        <button onClick={() => { setAddLinkFor(null); setNewLinkName(''); setNewLinkUrl(''); }}
+                          className="flex-1 py-1.5 bg-milk-tea-100 text-milk-tea-400 rounded-xl text-xs font-bold">取消</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={() => setAddLinkFor(cat.id)}
+                      className="w-full flex items-center justify-center space-x-1.5 py-2 border border-dashed border-milk-tea-200 rounded-xl text-[11px] text-milk-tea-400 hover:border-milk-tea-400 transition-colors">
+                      <Plus className="w-3 h-3" /><span>新增連結</span>
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+
+      {addCatMode ? (
+        <div className="bg-white rounded-2xl p-4 border border-milk-tea-200 shadow-sm space-y-2">
+          <div className="flex items-center space-x-2">
+            <input value={newCatEmoji} onChange={e => setNewCatEmoji(e.target.value)} maxLength={2}
+              className="w-12 text-center text-lg bg-milk-tea-50 border border-milk-tea-100 rounded-xl p-1.5 flex-shrink-0" />
+            <input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="分類名稱" autoFocus
+              className="flex-1 bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" />
           </div>
-        ) : (
-          <button onClick={() => setAddMode(true)}
-            className="bg-milk-tea-50 rounded-2xl border-2 border-dashed border-milk-tea-200 flex flex-col items-center justify-center space-y-1 hover:border-milk-tea-400 transition-colors min-h-[110px]">
-            <Plus className="w-5 h-5 text-milk-tea-300" />
-            <span className="text-xs text-milk-tea-400 font-bold">新增分類</span>
-          </button>
-        )}
-      </div>
+          <div className="flex space-x-2">
+            <button onClick={addCat} className="flex-1 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold">新增</button>
+            <button onClick={() => { setAddCatMode(false); setNewCatName(''); }} className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-400 rounded-xl text-sm font-bold">取消</button>
+          </div>
+        </div>
+      ) : (
+        <button onClick={() => setAddCatMode(true)}
+          className="w-full flex items-center justify-center space-x-2 py-3 bg-milk-tea-50 border-2 border-dashed border-milk-tea-200 rounded-2xl text-xs text-milk-tea-400 font-bold hover:border-milk-tea-400 transition-colors">
+          <Plus className="w-4 h-4" /><span>新增分類</span>
+        </button>
+      )}
     </div>
   );
 }
 
-/* ── 住宿（從收藏清單讀取住宿類型）── */
+/* ── 住宿收藏 ── */
 function AccommodationSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t: Trip) => void }) {
-  const saved = trip.savedSpots ?? [];
-  const hotels = saved.filter(s => s.category === 'hotel');
+  const saved = (trip.savedSpots ?? []).filter(s => s.category === 'hotel');
+  const all   = trip.savedSpots ?? [];
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newAddr, setNewAddr] = useState('');
 
   const add = () => {
     if (!newName.trim()) return;
-    const spot: SavedSpot = { id: `ss_${Date.now()}`, name: newName.trim(), address: newAddr.trim() || undefined, category: 'hotel' };
-    onUpdateTrip({ ...trip, savedSpots: [...saved, spot] });
+    onUpdateTrip({ ...trip, savedSpots: [...all, { id: `ss_${Date.now()}`, name: newName.trim(), address: newAddr.trim() || undefined, category: 'hotel' }] });
     setNewName(''); setNewAddr(''); setShowAdd(false);
   };
-  const remove = (id: string) => onUpdateTrip({ ...trip, savedSpots: saved.filter(s => s.id !== id) });
+  const remove = (id: string) => onUpdateTrip({ ...trip, savedSpots: all.filter(s => s.id !== id) });
 
   return (
     <div className="space-y-3">
@@ -311,13 +379,13 @@ function AccommodationSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip
           </motion.div>
         )}
       </AnimatePresence>
-      {hotels.length === 0 && !showAdd && (
+      {saved.length === 0 && !showAdd && (
         <div className="flex flex-col items-center py-8 text-milk-tea-300">
           <BedDouble className="w-10 h-10 opacity-30 mb-2" />
           <p className="text-xs">尚無收藏住宿</p>
         </div>
       )}
-      {hotels.map(h => (
+      {saved.map(h => (
         <div key={h.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm flex items-center space-x-3">
           <div className="w-11 h-11 rounded-xl bg-milk-tea-100 flex items-center justify-center flex-shrink-0 text-xl">🏨</div>
           <div className="flex-1 min-w-0">
@@ -329,100 +397,6 @@ function AccommodationSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip
           </button>
         </div>
       ))}
-    </div>
-  );
-}
-
-/* ── 景點收藏清單（與行程無關，只是想去清單）── */
-const SPOT_CAT_OPTIONS: { value: SpotCategory; label: string; emoji: string }[] = [
-  { value: 'attraction', label: '景點',   emoji: '🗺️' },
-  { value: 'activity',   label: '活動',   emoji: '🎡' },
-  { value: 'restaurant', label: '餐廳',   emoji: '🍽️' },
-  { value: 'cafe',       label: '咖啡廳', emoji: '☕' },
-  { value: 'shopping',   label: '購物',   emoji: '🛍️' },
-  { value: 'hotel',      label: '住宿',   emoji: '🏨' },
-  { value: 'other',      label: '其他',   emoji: '📌' },
-];
-
-function AttractionsSection({ trip, onUpdateTrip }: { trip: Trip; onUpdateTrip: (t: Trip) => void }) {
-  const saved = trip.savedSpots ?? [];
-  const [showAdd, setShowAdd] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newCat, setNewCat] = useState<SpotCategory>('attraction');
-  const [newNotes, setNewNotes] = useState('');
-
-  const add = () => {
-    if (!newName.trim()) return;
-    const spot: SavedSpot = { id: `ss_${Date.now()}`, name: newName.trim(), category: newCat, notes: newNotes.trim() || undefined };
-    onUpdateTrip({ ...trip, savedSpots: [...saved, spot] });
-    setNewName(''); setNewNotes(''); setShowAdd(false);
-  };
-  const remove = (id: string) => onUpdateTrip({ ...trip, savedSpots: saved.filter(s => s.id !== id) });
-
-  const catInfo = (cat: SpotCategory) => SPOT_CAT_OPTIONS.find(o => o.value === cat) ?? SPOT_CAT_OPTIONS[0];
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] text-milk-tea-400">收藏想去的地方，與行程分開儲存</p>
-        <button onClick={() => setShowAdd(v => !v)}
-          className="flex items-center space-x-1 text-[11px] text-milk-tea-500 font-bold bg-milk-tea-50 px-2.5 py-1 rounded-full border border-milk-tea-200">
-          <Plus className="w-3 h-3" /><span>新增</span>
-        </button>
-      </div>
-
-      {/* 新增表單 */}
-      <AnimatePresence>
-        {showAdd && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden">
-            <div className="bg-white rounded-2xl p-4 border border-milk-tea-200 shadow-sm space-y-3">
-              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="地點名稱"
-                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" autoFocus />
-              <div className="flex flex-wrap gap-1.5">
-                {SPOT_CAT_OPTIONS.map(o => (
-                  <button key={o.value} onClick={() => setNewCat(o.value)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${newCat === o.value ? 'bg-milk-tea-500 text-white' : 'bg-milk-tea-50 text-milk-tea-400 border border-milk-tea-200'}`}>
-                    {o.emoji} {o.label}
-                  </button>
-                ))}
-              </div>
-              <input value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="備註（選填）"
-                className="w-full bg-milk-tea-50 border border-milk-tea-100 rounded-xl px-3 py-2 text-sm" />
-              <div className="flex space-x-2">
-                <button onClick={add} className="flex-1 py-2 bg-milk-tea-500 text-white rounded-xl text-sm font-bold">儲存</button>
-                <button onClick={() => setShowAdd(false)} className="flex-1 py-2 bg-milk-tea-100 text-milk-tea-400 rounded-xl text-sm font-bold">取消</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {saved.length === 0 && !showAdd && (
-        <div className="flex flex-col items-center py-8 text-milk-tea-300">
-          <Compass className="w-10 h-10 opacity-30 mb-2" />
-          <p className="text-xs">尚無收藏景點</p>
-        </div>
-      )}
-
-      {saved.map(s => {
-        const ci = catInfo(s.category);
-        return (
-          <div key={s.id} className="bg-white rounded-2xl p-4 border border-milk-tea-100 shadow-sm flex items-center space-x-3">
-            <div className="w-11 h-11 rounded-xl bg-accent-coral/20 flex items-center justify-center flex-shrink-0 text-xl">
-              {ci.emoji}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-milk-tea-900 truncate">{s.name}</p>
-              <p className="text-[10px] text-milk-tea-400 mt-0.5">{ci.label}</p>
-              {s.notes && <p className="text-[10px] text-milk-tea-300 truncate mt-0.5">{s.notes}</p>}
-            </div>
-            <button onClick={() => remove(s.id)} className="text-milk-tea-200 hover:text-red-400 transition-colors flex-shrink-0">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -485,8 +459,7 @@ export const Home: React.FC<HomeProps> = ({ trip, onUpdateTrip, onNavigate }) =>
       {/* Header */}
       <header className="px-6 pt-10 pb-4 flex justify-between items-center">
         <div>
-          <h1 className="text-base font-extrabold tracking-tight text-milk-tea-900">🎀✨Cindy's Paradise☁️💖</h1>
-          <p className="text-milk-tea-400 text-xs font-medium mt-0.5">私人旅遊空間 👑</p>
+          <h1 className="text-xl font-extrabold tracking-tight text-milk-tea-900">🎀✨Cindy's Paradise☁️💖</h1>
         </div>
         <div className="flex space-x-2">
           <label className="w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center border border-milk-tea-100 cursor-pointer">
@@ -612,9 +585,23 @@ export const Home: React.FC<HomeProps> = ({ trip, onUpdateTrip, onNavigate }) =>
               </div>
             )}
 
-            {activeSection === 'accommodation' && <AccommodationSection trip={trip} onUpdateTrip={onUpdateTrip} />}
-            {activeSection === 'merchants'     && <MerchantsSection trip={trip} onUpdateTrip={onUpdateTrip} />}
-            {activeSection === 'attractions'   && <AttractionsSection trip={trip} onUpdateTrip={onUpdateTrip} />}
+            {activeSection === 'accommodation' && (
+              <AccommodationSection trip={trip} onUpdateTrip={onUpdateTrip} />
+            )}
+            {activeSection === 'merchants' && (
+              <CollectionSection
+                categories={trip.merchantCategories ?? []}
+                onUpdate={(cats) => onUpdateTrip({ ...trip, merchantCategories: cats })}
+                hint="收藏商家 IG / 小紅書 / Threads 連結，依分類整理"
+              />
+            )}
+            {activeSection === 'attractions' && (
+              <CollectionSection
+                categories={trip.attractionCategories ?? []}
+                onUpdate={(cats) => onUpdateTrip({ ...trip, attractionCategories: cats })}
+                hint="收藏景點 IG / 小紅書 / Threads 連結，依分類整理"
+              />
+            )}
           </motion.div>
         </AnimatePresence>
 

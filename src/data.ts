@@ -44,8 +44,12 @@ export const SAMPLE_TRIP: Trip = {
     }
   ],
   merchantCategories: [
-    { id: 'mc1', name: '咖啡廳', emoji: '☕', color: '#FFD4B8' },
-    { id: 'mc2', name: '衣服', emoji: '👗', color: '#AAB6FB' },
+    { id: 'mc1', name: '咖啡廳', emoji: '☕', color: '#FFD4B8', links: [] },
+    { id: 'mc2', name: '衣服', emoji: '👗', color: '#AAB6FB', links: [] },
+  ],
+  attractionCategories: [
+    { id: 'ac1', name: '景點', emoji: '🗺️', color: '#99F2E6', links: [] },
+    { id: 'ac2', name: '美食', emoji: '🍜', color: '#FFACBB', links: [] },
   ],
   savedSpots: [],
   days: [
