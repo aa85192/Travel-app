@@ -1,34 +1,62 @@
 import React from 'react';
-import { Home, ClipboardList, Map as MapIcon, Wallet, Settings } from 'lucide-react';
+import { motion } from 'motion/react';
+import { BearHome, BearItinerary, BearMap, BearBudget, BearSettings } from '../settings/BearIcons';
 
 interface BottomNavProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
-  const tabs = [
-    { id: 'home', icon: Home, label: '首頁' },
-    { id: 'itinerary', icon: ClipboardList, label: '行程' },
-    { id: 'map', icon: MapIcon, label: '地圖' },
-    { id: 'budget', icon: Wallet, label: '預算' },
-    { id: 'settings', icon: Settings, label: '設定' },
-  ];
+const TABS = [
+  { id: 'home',      Bear: BearHome,      label: '首頁' },
+  { id: 'itinerary', Bear: BearItinerary, label: '行程' },
+  { id: 'map',       Bear: BearMap,       label: '地圖' },
+  { id: 'budget',    Bear: BearBudget,    label: '預算' },
+  { id: 'settings',  Bear: BearSettings,  label: '設定' },
+];
 
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-milk-tea-200 px-4 py-2 flex justify-between items-center z-50 pb-safe">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`flex flex-col items-center space-y-1 transition-colors ${
-            activeTab === tab.id ? 'text-milk-tea-500' : 'text-milk-tea-300'
-          }`}
-        >
-          <tab.icon className={`w-6 h-6 ${activeTab === tab.id ? 'fill-milk-tea-500/10' : ''}`} />
-          <span className="text-[10px] font-medium">{tab.label}</span>
-        </button>
-      ))}
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-milk-tea-100 px-2 py-2 flex justify-around items-end z-50 pb-safe">
+      {TABS.map(({ id, Bear, label }) => {
+        const active = activeTab === id;
+        return (
+          <button
+            key={id}
+            onClick={() => onTabChange(id)}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 rounded-2xl transition-all"
+          >
+            <motion.div
+              animate={{
+                scale: active ? 1.18 : 1,
+                y: active ? -3 : 0,
+              }}
+              transition={{ type: 'spring', stiffness: 420, damping: 22 }}
+              className={`transition-colors duration-200 ${active ? 'text-milk-tea-500' : 'text-milk-tea-300'}`}
+            >
+              <Bear size={28} />
+            </motion.div>
+
+            <motion.span
+              animate={{ opacity: active ? 1 : 0.55 }}
+              className={`text-[10px] font-bold leading-none transition-colors duration-200 ${
+                active ? 'text-milk-tea-500' : 'text-milk-tea-300'
+              }`}
+            >
+              {label}
+            </motion.span>
+
+            {/* Active dot indicator */}
+            {active && (
+              <motion.span
+                layoutId="nav-dot"
+                className="w-1 h-1 rounded-full bg-milk-tea-400 mt-0.5"
+              />
+            )}
+            {!active && <span className="w-1 h-1 mt-0.5" />}
+          </button>
+        );
+      })}
     </nav>
   );
 };
