@@ -6,6 +6,7 @@ import { PhotoThumbnail } from '../common/PhotoThumbnail';
 import { openInNaverMap } from '../../utils/deepLink';
 import { useUIStore } from '../../stores/uiStore';
 import { useTripStore } from '../../stores/tripStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { DayWeather, weatherEmoji, fetchSpotWeather } from '../../services/weatherService';
 
@@ -58,6 +59,8 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { openModal, addToast } = useUIStore();
   const { deleteSpot } = useTripStore();
+  const { cardDensity } = useSettingsStore();
+  const pad = cardDensity === 'compact' ? 'p-2.5 space-x-2.5' : cardDensity === 'spacious' ? 'p-5 space-x-5' : 'p-4 space-x-4';
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -91,7 +94,7 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
       className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 overflow-hidden hover:shadow-md transition-all"
     >
       <div
-        className="p-4 flex items-start space-x-4 cursor-pointer active:scale-[0.99] transition-transform"
+        className={`flex items-start cursor-pointer active:scale-[0.99] transition-transform ${pad}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
