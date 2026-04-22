@@ -5,10 +5,12 @@ import { Home } from './pages/Home';
 import { TripOverview } from './pages/TripOverview';
 import { Budget } from './pages/Budget';
 import { MapPage } from './pages/MapPage';
+import { Settings } from './pages/Settings';
 import { BottomNav } from './components/layout/BottomNav';
 import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate';
 import { useTripStore } from './stores/tripStore';
 import { useUIStore } from './stores/uiStore';
+import { useSettingsStore, applyThemePalette } from './stores/settingsStore';
 
 
 export default function App() {
@@ -16,6 +18,10 @@ export default function App() {
   const [activeTab, setActiveTab] = React.useState('home');
   const { trip, setTrip } = useTripStore();
   const { toasts, navigateTo, setNavigateTo } = useUIStore();
+  const { themeHue } = useSettingsStore();
+
+  // Restore persisted theme on first render
+  React.useEffect(() => { applyThemePalette(themeHue); }, []);
 
   // 接收來自子元件（如 TransitCard）的跨層導航請求
   React.useEffect(() => {
@@ -88,22 +94,12 @@ export default function App() {
         {activeTab === 'settings' && (
           <motion.div
             key="settings"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center h-screen p-10 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
           >
-            <div className="w-20 h-20 bg-milk-tea-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-4xl">🚧</span>
-            </div>
-            <h2 className="text-xl font-bold text-milk-tea-900">功能開發中</h2>
-            <p className="text-sm text-milk-tea-500 mt-2">「設定」功能即將上線，敬請期待！</p>
-            <button
-              onClick={() => setActiveTab('home')}
-              className="mt-6 px-8 py-2 bg-milk-tea-500 text-white rounded-full font-bold shadow-md"
-            >
-              回首頁
-            </button>
+            <Settings />
           </motion.div>
         )}
       </AnimatePresence>
