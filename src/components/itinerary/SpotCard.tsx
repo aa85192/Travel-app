@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MoreHorizontal, MapPin, Clock, CircleDollarSign, Edit2, Trash2, Copy } from 'lucide-react';
+import {
+  MoreHorizontal, MapPin, Clock, CircleDollarSign, Edit2, Trash2, Copy,
+  ListChecks, Plus, X, Check,
+} from 'lucide-react';
 import { Spot } from '../../types';
 import { PhotoThumbnail } from '../common/PhotoThumbnail';
 import { openInNaverMap } from '../../utils/deepLink';
@@ -41,6 +44,141 @@ const TAG_PALETTE = [
   { bg: '#FFE8D6', text: '#8A4020', border: '#FFD4B8' },
   { bg: '#EDE8FF', text: '#3A2A8A', border: '#C5B8FF' },
 ];
+
+// ────────────────────────────────────────────────────────────────
+// Inline todo list rendered inside the expanded SpotCard.
+// Tap circle → toggle done; tap text → edit inline; tap × → delete.
+// ────────────────────────────────────────────────────────────────
+interface SpotTodoListProps {
+  spot: Spot;
+  dayNumber: number;
+}
+
+const SpotTodoList: React.FC<SpotTodoListProps> = ({ spot, dayNumber }) => {
+  const { addSpotTodo, toggleSpotTodo, updateSpotTodo, deleteSpotTodo } = useTripStore();
+  const [draft, setDraft] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState('');
+  const editRef = useRef<HTMLInputElement>(null);
+
+  const todos = spot.todos ?? [];
+  const doneCount = todos.filter((t) => t.done).length;
+
+  useEffect(() => {
+    if (editingId) editRef.current?.focus();
+  }, [editingId]);
+
+  const handleAdd = () => {
+    if (!draft.trim()) return;
+    addSpotTodo(dayNumber, spot.id, draft);
+    setDraft('');
+  };
+
+  const startEdit = (id: string, text: string) => {
+    setEditingId(id);
+    setEditingText(text);
+  };
+
+  const saveEdit = () => {
+    if (!editingId) return;
+    if (editingText.trim()) {
+      updateSpotTodo(dayNumber, spot.id, editingId, editingText);
+    }
+    setEditingId(null);
+    setEditingText('');
+  };
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="bg-white rounded-2xl border border-milk-tea-100 p-3 space-y-2"
+    >
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-milk-tea-500 flex items-center">
+          <ListChecks size={12} className="mr-1.5" />
+          待辦清單
+        </p>
+        {todos.length > 0 && (
+          <span className="text-[10px] font-bold text-milk-tea-400 font-mono">
+            {doneCount}/{todos.length}
+          </span>
+        )}
+      </div>
+
+      {todos.length > 0 && (
+        <div className="space-y-1">
+          {todos.map((t) => (
+            <div key={t.id} className="flex items-center group">
+              <button
+                onClick={() => toggleSpotTodo(dayNumber, spot.id, t.id)}
+                className="flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all active:scale-90"
+                style={{
+                  borderColor: t.done ? '#FF8FAF' : '#FFBFCA',
+                  backgroundColor: t.done ? '#FF8FAF' : 'transparent',
+                }}
+                aria-label={t.done ? '標記為未完成' : '標記為已完成'}
+              >
+                {t.done && <Check size={12} className="text-white" strokeWidth={3} />}
+              </button>
+
+              {editingId === t.id ? (
+                <input
+                  ref={editRef}
+                  value={editingText}
+                  onChange={(e) => setEditingText(e.target.value)}
+                  onBlur={saveEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveEdit();
+                    if (e.key === 'Escape') { setEditingId(null); setEditingText(''); }
+                  }}
+                  className="flex-1 ml-2 mr-1 text-xs bg-milk-tea-50 border border-milk-tea-200 rounded-lg px-2 py-1 focus:outline-none focus:border-milk-tea-400 text-milk-tea-800"
+                />
+              ) : (
+                <button
+                  onClick={() => startEdit(t.id, t.text)}
+                  className={`flex-1 ml-2 mr-1 text-left text-xs leading-snug py-0.5 transition-colors ${
+                    t.done
+                      ? 'line-through text-milk-tea-300'
+                      : 'text-milk-tea-800 hover:text-milk-tea-600'
+                  }`}
+                >
+                  {t.text}
+                </button>
+              )}
+
+              <button
+                onClick={() => deleteSpotTodo(dayNumber, spot.id, t.id)}
+                className="flex-shrink-0 p-1 text-milk-tea-200 hover:text-red-400 transition-colors"
+                aria-label="刪除"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center pt-1 border-t border-milk-tea-50">
+        <Plus size={12} className="text-milk-tea-300 flex-shrink-0 ml-0.5" />
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+          placeholder="新增待辦事項…"
+          className="flex-1 ml-1.5 text-xs bg-transparent border-none focus:outline-none placeholder:text-milk-tea-300 text-milk-tea-800 py-1"
+        />
+        {draft.trim() && (
+          <button
+            onClick={handleAdd}
+            className="flex-shrink-0 px-2 py-0.5 bg-milk-tea-500 text-white rounded-md text-[10px] font-bold active:scale-95 transition-transform"
+          >
+            加入
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayDate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -239,6 +377,8 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
             className="px-4 pb-4 border-t border-milk-tea-50 bg-milk-tea-50/30"
           >
             <div className="pt-4 space-y-4">
+              <SpotTodoList spot={spot} dayNumber={dayNumber} />
+
               {spot.notes && (
                 <div className="text-xs text-milk-tea-600 bg-white/80 p-3 rounded-2xl border border-milk-tea-100 italic">
                   "{spot.notes}"

@@ -64,6 +64,14 @@ export interface Transit {
   };
 }
 
+export interface TodoItem {
+  id: string;
+  text: string;
+  done: boolean;
+  /** Optional date (YYYY-MM-DD) for unclassified todos that should appear under a specific day. */
+  date?: string;
+}
+
 export interface Spot {
   id: string;
   name: string;
@@ -82,6 +90,7 @@ export interface Spot {
   openingHours?: string;
   rating?: number;
   order: number;
+  todos?: TodoItem[];
 }
 
 export interface DayPlan {
@@ -105,4 +114,6 @@ export interface Trip {
   merchantCategories?: CollectionCategory[];
   attractionCategories?: CollectionCategory[];
   savedSpots?: { id: string; name: string; address?: string; category: string }[];
+  /** Todos not linked to any spot. Optional `date` groups them under a specific day; otherwise they live in the global 未分類 section. */
+  unclassifiedTodos?: TodoItem[];
 }

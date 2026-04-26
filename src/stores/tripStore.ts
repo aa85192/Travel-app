@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Trip, Spot, DayPlan, Transit, TransportMode } from '../types';
+import { Trip, Spot, DayPlan, Transit, TransportMode, TodoItem } from '../types';
 import { SAMPLE_TRIP } from '../data';
 import { recalculateDayTransits } from '../utils/recalculateTransits';
 import { getAuthHash } from '../components/PasswordGate';
@@ -35,6 +35,21 @@ interface TripState {
   moveSpotAcrossDays: (spotId: string, fromDay: number, toDay: number, targetIndex: number) => void;
   // Transit Actions
   updateTransitMode: (dayNumber: number, transitId: string, mode: TransportMode) => void;
+
+  // Todo Actions — Spot todos
+  addSpotTodo: (dayNumber: number, spotId: string, text: string) => void;
+  toggleSpotTodo: (dayNumber: number, spotId: string, todoId: string) => void;
+  updateSpotTodo: (dayNumber: number, spotId: string, todoId: string, text: string) => void;
+  deleteSpotTodo: (dayNumber: number, spotId: string, todoId: string) => void;
+
+  // Todo Actions — Unclassified (trip-level)
+  addUnclassifiedTodo: (text: string, date?: string) => void;
+  toggleUnclassifiedTodo: (todoId: string) => void;
+  updateUnclassifiedTodo: (todoId: string, text: string) => void;
+  deleteUnclassifiedTodo: (todoId: string) => void;
+
+  // Move an unclassified todo onto a spot (preserves done state)
+  linkUnclassifiedTodoToSpot: (todoId: string, dayNumber: number, spotId: string) => void;
 }
 
 export const useTripStore = create<TripState>()(
@@ -264,6 +279,137 @@ export const useTripStore = create<TripState>()(
           return { ...day, transits: newTransits };
         });
         return { trip: { ...state.trip, days: newDays } };
+      }),
+
+      // ───── Spot todos ─────────────────────────────────────────
+      addSpotTodo: (dayNumber, spotId, text) => set((state) => {
+        const trimmed = text.trim();
+        if (!trimmed) return state;
+        const todo: TodoItem = {
+          id: `todo_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          text: trimmed,
+          done: false,
+        };
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newSpots = day.spots.map((s) =>
+            s.id === spotId ? { ...s, todos: [...(s.todos ?? []), todo] } : s
+          );
+          return { ...day, spots: newSpots };
+        });
+        return { trip: { ...state.trip, days: newDays } };
+      }),
+
+      toggleSpotTodo: (dayNumber, spotId, todoId) => set((state) => {
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newSpots = day.spots.map((s) => {
+            if (s.id !== spotId) return s;
+            const todos = (s.todos ?? []).map((t) =>
+              t.id === todoId ? { ...t, done: !t.done } : t
+            );
+            return { ...s, todos };
+          });
+          return { ...day, spots: newSpots };
+        });
+        return { trip: { ...state.trip, days: newDays } };
+      }),
+
+      updateSpotTodo: (dayNumber, spotId, todoId, text) => set((state) => {
+        const trimmed = text.trim();
+        if (!trimmed) return state;
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newSpots = day.spots.map((s) => {
+            if (s.id !== spotId) return s;
+            const todos = (s.todos ?? []).map((t) =>
+              t.id === todoId ? { ...t, text: trimmed } : t
+            );
+            return { ...s, todos };
+          });
+          return { ...day, spots: newSpots };
+        });
+        return { trip: { ...state.trip, days: newDays } };
+      }),
+
+      deleteSpotTodo: (dayNumber, spotId, todoId) => set((state) => {
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newSpots = day.spots.map((s) => {
+            if (s.id !== spotId) return s;
+            const todos = (s.todos ?? []).filter((t) => t.id !== todoId);
+            return { ...s, todos };
+          });
+          return { ...day, spots: newSpots };
+        });
+        return { trip: { ...state.trip, days: newDays } };
+      }),
+
+      // ───── Unclassified todos ─────────────────────────────────
+      addUnclassifiedTodo: (text, date) => set((state) => {
+        const trimmed = text.trim();
+        if (!trimmed) return state;
+        const todo: TodoItem = {
+          id: `todo_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          text: trimmed,
+          done: false,
+          ...(date ? { date } : {}),
+        };
+        return {
+          trip: {
+            ...state.trip,
+            unclassifiedTodos: [...(state.trip.unclassifiedTodos ?? []), todo],
+          },
+        };
+      }),
+
+      toggleUnclassifiedTodo: (todoId) => set((state) => ({
+        trip: {
+          ...state.trip,
+          unclassifiedTodos: (state.trip.unclassifiedTodos ?? []).map((t) =>
+            t.id === todoId ? { ...t, done: !t.done } : t
+          ),
+        },
+      })),
+
+      updateUnclassifiedTodo: (todoId, text) => set((state) => {
+        const trimmed = text.trim();
+        if (!trimmed) return state;
+        return {
+          trip: {
+            ...state.trip,
+            unclassifiedTodos: (state.trip.unclassifiedTodos ?? []).map((t) =>
+              t.id === todoId ? { ...t, text: trimmed } : t
+            ),
+          },
+        };
+      }),
+
+      deleteUnclassifiedTodo: (todoId) => set((state) => ({
+        trip: {
+          ...state.trip,
+          unclassifiedTodos: (state.trip.unclassifiedTodos ?? []).filter((t) => t.id !== todoId),
+        },
+      })),
+
+      linkUnclassifiedTodoToSpot: (todoId, dayNumber, spotId) => set((state) => {
+        const todo = (state.trip.unclassifiedTodos ?? []).find((t) => t.id === todoId);
+        if (!todo) return state;
+        const moved: TodoItem = { id: todo.id, text: todo.text, done: todo.done };
+        const newDays = state.trip.days.map((day) => {
+          if (day.dayNumber !== dayNumber) return day;
+          const newSpots = day.spots.map((s) =>
+            s.id === spotId ? { ...s, todos: [...(s.todos ?? []), moved] } : s
+          );
+          return { ...day, spots: newSpots };
+        });
+        return {
+          trip: {
+            ...state.trip,
+            days: newDays,
+            unclassifiedTodos: (state.trip.unclassifiedTodos ?? []).filter((t) => t.id !== todoId),
+          },
+        };
       }),
 
       duplicateSpot: (spotId, fromDay, toDay) => set((state) => {

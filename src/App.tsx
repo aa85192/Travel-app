@@ -6,6 +6,7 @@ import { TripOverview } from './pages/TripOverview';
 import { Budget } from './pages/Budget';
 import { MapPage } from './pages/MapPage';
 import { Settings } from './pages/Settings';
+import { TodoList } from './pages/TodoList';
 import { BottomNav } from './components/layout/BottomNav';
 import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate';
 import { useTripStore } from './stores/tripStore';
@@ -66,6 +67,17 @@ export default function App() {
             transition={{ duration: 0.3 }}
           >
             <TripOverview onBack={() => setActiveTab('home')} />
+          </motion.div>
+        )}
+        {activeTab === 'todo' && (
+          <motion.div
+            key="todo"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <TodoList onBack={() => setActiveTab('home')} />
           </motion.div>
         )}
         {activeTab === 'budget' && (

@@ -120,6 +120,27 @@ export function BearBudget({ size = 24, className }: BearIconProps) {
   );
 }
 
+// ─── 待辦 Bear — holding a tiny checklist note ──────────────────────
+export function BearTodo({ size = 24, className }: BearIconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
+      {/* Note paper */}
+      <rect x="9.5" y="3.5" width="13" height="11" rx="2" fill="currentColor" fillOpacity="0.88" />
+      {/* Top tab/clip */}
+      <rect x="14" y="2" width="4" height="2" rx="0.6" fill="currentColor" fillOpacity="0.72" />
+      {/* Two checkbox + line rows */}
+      <rect x="11" y="6.2" width="2.2" height="2.2" rx="0.5" fill="white" fillOpacity="0.5" />
+      <path d="M11.4 7.3 L12.0 7.9 L12.9 6.7" stroke="currentColor" strokeOpacity="0.85" strokeWidth="0.75" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="14" y1="7.4" x2="20.5" y2="7.4" stroke="white" strokeOpacity="0.55" strokeWidth="0.9" strokeLinecap="round" />
+      <rect x="11" y="9.6" width="2.2" height="2.2" rx="0.5" fill="white" fillOpacity="0.5" />
+      <line x1="14" y1="10.7" x2="20.5" y2="10.7" stroke="white" strokeOpacity="0.55" strokeWidth="0.9" strokeLinecap="round" />
+      <rect x="11" y="12.8" width="2.2" height="0.6" rx="0.3" fill="white" fillOpacity="0.45" />
+      <line x1="14" y1="13.1" x2="18" y2="13.1" stroke="white" strokeOpacity="0.4" strokeWidth="0.9" strokeLinecap="round" />
+      <Face />
+    </svg>
+  );
+}
+
 // ─── 設定 Bear — wearing a little gear crown ────────────────────────
 export function BearSettings({ size = 24, className }: BearIconProps) {
   return (
