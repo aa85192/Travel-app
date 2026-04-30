@@ -1,66 +1,109 @@
-# 25 歲女性 IG 用戶視角 — App 審視與規劃
+# Travel-app 雙視角審視與規劃
 
-> **角色設定 (Persona)**
-> 小桃，25 歲，台灣上班族。每天滑 IG / Threads / 小紅書 2 小時以上，喜歡 Y2K、quiet luxury、韓系、可愛潮流。常與 2-4 位閨蜜出國（韓國、日本、東南亞）。出發前會在 IG 收藏 50+ 篇打卡點，回國後會花一週剪 Reels 與整理九宮格。對「視覺感」、「儀式感」、「可分享性」極度敏感。
+> **使用情境**：私人使用（本人 + 旅伴 2-4 人），非公開上架。免費額度綽綽有餘。
+>
+> **審視視角 A：25 歲女學生 IG 重度用戶**
+> 小桃，25 歲台灣學生。每天滑 IG / Threads / 小紅書 2 小時以上，Y2K、韓系、可愛潮流。每年 2-3 次與閨蜜出國，主力韓日。對「視覺感」、「儀式感」極度敏感；但因為私用，**不需要病毒擴散與 Discover 策展**，重點轉為「自己看得爽 + 朋友圈內好用」。
+>
+> **審視視角 B：資深旅遊 App 工程師**
+> 看冗餘、死碼、架構整潔度、長期維護成本。私用也要乾淨，因為使用者就是自己，技術債最後還是自己還。
 
 ---
 
 ## 一、目前優勢 (Already Loved 💗)
 
-審視後，App 已具備不少戳中此族群的點：
-
-- **馬卡龍粉色主題 + 熊熊圖示**：第一眼好感度高，符合「軟萌」審美。
-- **收藏夾 (Collections)**：可以貼 IG / 小紅書 / Threads 連結並分類，貼近「滑到再貼」的工作流。
-- **預算分帳**：閨蜜出國最痛點之一，KRW↔TWD 即時匯率體貼。
-- **6 碼同步代碼**：分享給朋友載入同一份行程，免註冊很佛心。
-- **熊熊 BearIcons + BubbleLoader + ColorWheelPicker**：細節做了，但沒有發揮到極致。
+- **馬卡龍粉色主題 + 熊熊 BearIcons**：第一眼好感度高
+- **收藏夾 (Collections)**：可貼 IG / 小紅書 / Threads 連結並分類
+- **預算分帳 + 即時匯率**：閨蜜出國最痛點，已有 KRW↔TWD Visa 匯率
+- **6 碼同步代碼**：免註冊就能多人共用一份行程
+- **乾淨的 Store 分層**：tripStore / uiStore / settingsStore 職責清楚
+- **CSS token 系統**：milk-tea 9 階 + 5 色 accent 都有用到，沒有死 token
 
 ---
 
-## 二、不足之處 (Gaps) — 依嚴重度分類
+## 二、雙視角發現 (Findings)
 
-### 🔴 P0：直接影響「想分享 / 想開啟」動機
+### 視角 A：IG 女學生看到的不足
+
+> 因為「私用」，原規劃中的 Discover / 病毒分享 / 邀請卡儀式感 全部降級。
+
+#### 🔴 P0 — 影響「每天想開」的核心體驗
 
 | 缺口 | 現況 | 為何痛 |
 |---|---|---|
-| **無社群分享卡片** | 無法把行程匯出成 IG Story 比例 (9:16) 的漂亮卡片 | 25 歲女生規劃完最想做的就是發一張「我要出發了 ✈️」到限動。目前只能截圖，醜。 |
-| **照片功能極度貧弱** | Trip 只有單張 coverImage，Spot 只有單張 photo URL | 無法做相簿、無法當「旅行日記」、回國後完全無法回味 |
-| **沒有「旅行回顧 / Recap」** | 結束後沒有 Spotify Wrapped 風格的總結 | 這是最具病毒傳播力的功能，缺它=放棄一半曝光機會 |
-| **沒有「打卡點探索」** | 收藏夾要自己貼連結，沒有發現 (Discover) 功能 | IG 女孩會想看「弘大必拍咖啡廳 Top 10」、「韓劇場景地圖」 |
-| **無深色模式** | 僅淺色馬卡龍 | 晚上滑、機上滑、地鐵滑都刺眼。2026 了沒 dark mode 是硬傷 |
+| **照片功能極度貧弱** | Trip 只有單張 coverImage，Spot 只有單張 photo URL | 沒辦法當旅行相簿，回國只能再去翻相機膠卷 |
+| **無旅行回顧 (Trip Wrapped)** | 行程結束後資料就靜止了 | 私用也想看「我們今年走了 87 公里、吃了 23 碗韓食」這種 |
+| **無深色模式** | 只有淺色馬卡龍 | 機上、地鐵、被窩裡滑都刺眼 |
+| **無打卡心情標記** | Spot 只能存名字地址，無感受 | 回顧時記不起「這家咖啡廳到底好不好喝」 |
+| **Story 截圖醜** | 想分享行程到限動只能直接截圖 | 即使私用，發限動標朋友還是常見場景 |
 
-### 🟠 P1：影響長期黏著度
+#### 🟠 P1 — 影響「規劃前」與「玩中」黏著度
 
 | 缺口 | 為何痛 |
 |---|---|
-| **無 OOTD / 穿搭規劃** | 25 歲女生出國前一週都在配衣服，行李箱 outfit by day 是核心需求 |
-| **無採購清單 / 必買** | 韓妞必買、藥妝、伴手禮分人代買清單完全沒有 |
-| **無旅行日記 / 手帳** | 沒有可以寫心情、貼拍立得、貼貼紙的頁面 |
-| **無「主題玩法」標籤** | 缺少 #咖啡廳巡禮 #韓劇場景 #網美打卡 #甜點地圖 等視覺化 tag |
-| **天氣與穿搭未串接** | weatherService 已存在但沒有「明天 12°C，建議大衣」 |
-| **同步邀請體驗弱** | 6 碼很工程師，缺少「閨蜜旅行邀請卡」的儀式感 |
-| **AI 助理沒有對話 UI** | geminiSearchService 已接但沒做成「小桃旅行管家」對話框 |
-| **個人化頭像太陽春** | 只有 emoji + 顏色，沒有捏臉 / 動物頭像庫 / 暱稱卡 |
+| **無 OOTD 穿搭板** | 韓國行前一週都在配衣服 + 比天氣，現在要切到備忘錄 |
+| **無採購 / 代買清單** | 「幫我買 Olive Young 的 XX」散在 LINE 對話被洗掉 |
+| **無旅行日記 / 手帳** | 沒地方寫心情、貼貼紙、留拍立得感 |
+| **天氣 × 穿搭未串接** | weatherService 已有，浪費 |
+| **AI 對話 UI 缺席** | geminiSearchService 已接，但只用在搜景點，沒做成「問桃桃」對話 |
 
-### 🟡 P2：錦上添花
+#### 🟡 P2 — 不做也沒差的錦上添花
 
-- 無音樂 / 旅行歌單整合（Spotify / Apple Music 連結）
-- 無節慶限定主題（櫻花季、聖誕、生日月）
-- 無徽章 / 成就（去過 5 國、累積 100 個景點…）
-- 無 PWA「加入主畫面」指引與推播（航班倒數、明日行程提醒）
-- 無觸覺回饋 (haptic) 與微互動（點愛心彈跳、刪除時的小動畫）
-- 預算頁過於表格化，缺少「存錢豬」「達成度進度條」的可愛化視覺
-- 僅繁中，缺日 / 韓 / 英對照（去日韓時連景點名都要自己查）
+- ~~Discover 策展熱門打卡點~~ → **私用不需要**，自己貼 IG 連結就夠
+- ~~病毒式分享卡片 / 閨蜜邀請卡~~ → 降級為「Story 截圖好看」即可，不需要 QR code 邀請流程
+- 旅行歌單 (Spotify 連結欄位即可，不做整合)
+- 節慶限定主題（自己手動切色盤就好）
+- 徽章 / 成就（私用無社交比較壓力，可有可無）
+- 觸覺回饋、微互動（有預算再做）
+- 多語對照（行前自己查也行）
+
+---
+
+### 視角 B：工程師看到的技術債
+
+詳細審計結果如下表：
+
+| # | 問題 | 嚴重度 | 動作 |
+|---|---|---|---|
+| B1 | `components/editor/ConfirmDialog.tsx` 與 `components/common/ConfirmDialog.tsx` 重複實作 | 🔴 | 刪除 editor 版，把 `TripInfoEditModal` / `DayEditModal` 改 import common 版（`isDangerous` → `variant="danger"`） |
+| B2 | `BubbleLoader.tsx` **零引用** | 🟠 | 直接刪，需要時再寫 |
+| B3 | `hooks/useLocalStorage.ts` **零引用**（被 Zustand persist 取代） | 🟠 | 刪除 |
+| B4 | `types.ts` 中 `MerchantCategory` type alias **零引用** | 🟠 | 刪除 |
+| B5 | `Trip.merchantCategories` / `attractionCategories` 只在 `data.ts` + `Home.tsx` 邊角使用，職責不清 | 🟠 | 評估是否合併進 `CollectionCategory` 主流程，或標記 `@deprecated` |
+| B6 | 三個路由服務 `osrmService` / `kakaoDirectionsService` / `uberService` 各自被 `TransitCard.tsx` 直接呼叫 | 🟠 | 抽 `routingFacade.ts`，依 `mode + region` 派發；TransitCard 只看一個介面 |
+| B7 | `placeSearchService` 已是 facade（Naver→Nominatim fallback），但 `SpotFormFields` 同時 import naver/gemini/wikipedia，職責散落 | 🟠 | 把 wikipediaPhoto 也納入 placeSearchService 的「自動補圖」流程，SpotFormFields 只看一個 API |
+| B8 | `tripStore` 443 行單檔，含 Days / Spots / Transits / Todos / Expenses 五區塊 mutation | 🟢 但要監控 | 暫不拆，但加區塊註解。若 Phase 2 加 Outfit / Shopping 再考慮 slice 模式 |
+| B9 | `cloudflare-worker.js` 存在於 repo 根目錄，沒有 deploy script、沒有 wrangler.toml | 🟠 | 加 `wrangler.toml` + 部署說明，避免「誰改了 worker 沒人知道」 |
+| B10 | `passwords.ts` 把 hash 寫死在 client bundle | 🟢 私用可接受 | 註解標明「私用，不要 open source」即可 |
+| B11 | `index.html` + `metadata.json` 是 AI Studio 殘留 | 🟢 | 確認 metadata.json 是否還有用，沒用就刪 |
+
+> **私用情境補充**：B6 / B7 / B8 在公開 App 是必須重構，私用情境可以等到「下次想加新功能時順手做」，不必為了重構而重構。**B1-B5 是純粹的死碼，建議馬上清掉**（總時間 < 30 分鐘）。
 
 ---
 
 ## 三、改進規劃 (Roadmap)
 
-> 標記說明：🟢 純客端、零成本　🟡 用既有免費額度即可　🔴 對免費方案有壓力，需取捨
+> 標記說明：🟢 純客端、零成本　🟡 用既有免費額度即可　🔴 對免費方案有壓力（私用情境基本不會踩到）
 
-### 🚀 Phase 1 — 「拍照即分享」基底 (2-3 週)
+### 🧹 Phase 0 — 清技術債 (半天)
 
-> 目標：讓行程「值得發限動」。本階段全部 🟢 純客端，不增加任何後端負擔。
+> 動手之前先清死碼，避免新功能蓋在舊 bug 上。
+
+- [ ] **B1** 合併 ConfirmDialog（保留 common 版本，刪 editor 版本，更新 2 處 import）
+- [ ] **B2** 刪除 `components/common/BubbleLoader.tsx`
+- [ ] **B3** 刪除 `hooks/useLocalStorage.ts`
+- [ ] **B4** 刪除 `types.ts` 內 `MerchantCategory` type alias
+- [ ] **B5** 評估 `merchantCategories` / `attractionCategories` 是否要合併或刪除（看 Home.tsx 實際使用）
+- [ ] **B11** 確認 `metadata.json` 是否還有用途，沒用就刪
+- [ ] **B9** 補 `wrangler.toml` 與 worker 部署 README 段落
+
+完成後跑 `npm run lint`（即 `tsc --noEmit`）確認沒破壞型別。
+
+---
+
+### 🚀 Phase 1 — 「拍照即回憶」基底 (2-3 週)
+
+> 目標：讓 App 從「規劃工具」進化為「旅行相簿」。全部 🟢 純客端。
 
 1. **行程封面 / 景點多照片** 🟢
    - `Trip.coverImage` → `coverImages: string[]`
@@ -85,71 +128,68 @@
 
 ---
 
-### 🎀 Phase 2 — 「閨蜜共玩」社交層 (3-4 週)
+### 🎀 Phase 2 — 「玩中好用」實戰層 (2-3 週)
 
-5. **閨蜜邀請卡** 🟢
-   - 純客端產生 PNG（QR code + 同步代碼 + 出發倒數）
-   - QR 用 `qrcode` npm 套件離線產生，不打外部 API
+> 私用情境刪除了 Discover 策展與邀請卡儀式感，聚焦真正會用到的功能。
 
-6. **OOTD / 穿搭板** 🟢
+5. **OOTD / 穿搭板** 🟢
    - 新頁面 `Outfit.tsx`：每天一格，貼穿搭參考圖、寫單品清單
    - 圖片同照片策略（IndexedDB local-first）
-   - 串既有 weatherService → 「明天 12°C，建議大衣」
+   - 串既有 weatherService → 「明天 12°C，建議大衣 + 圍巾」
+   - 行李清單 sub-section：自動聚合每日 outfit 的單品 → 打包 checklist
 
-7. **採購清單 / 代買** 🟢
-   - TodoList 擴充 `type: 'task' | 'shopping'`
+6. **採購 / 代買清單** 🟢
+   - TodoList 擴充 `type: 'task' | 'shopping'`（B5 的 merchantCategories 可在這裡找到歸宿）
    - 購物項可指派「幫誰買 / 預算上限 / 店家」
-   - 與預算頁打通：勾掉時一鍵建立 expense
+   - 勾掉時一鍵建立 expense → 與預算頁打通
+   - 結算時自動算誰欠誰多少（沿用既有 settlement.ts）
 
-8. **AI 旅行管家對話框** 🟡
-   - 浮動 FAB（粉色熊熊頭）→ 開啟對話 sheet
-   - 預設快捷：「推薦弘大咖啡廳」「這天太空幫我排」「雨備方案」
-   - **免費額度保護**：
-     - 客端 debounce ≥1 秒、每 session 上限 20 則
+7. **AI 旅行管家對話框** 🟡
+   - 浮動 FAB（熊熊頭）→ 開啟 bottom sheet 對話
+   - 預設快捷：「弘大咖啡廳」「這天太空幫我排」「雨備方案」「韓妞必買」
+   - 用既有 `geminiSearchService`，只缺 streaming UI
+   - **私用免費額度保護**（即使只有 2-4 人也順手做）：
+     - 客端 debounce 1 秒、答案 ≤200 字
      - localStorage 快取常見 prompt 結果 7 天
-     - 答案上限 200 字（縮短 token）
-     - 顯示「今日剩餘次數 X / 30」避免被濫用
-   - 用既有 `geminiSearchService`，只需做 UI
+     - 不顯示倒數（私用無濫用風險），但記錄當日呼叫次數方便除錯
 
-9. **熱門打卡點 Discover** 🟢
-   - 新頁面 `Discover.tsx`：策展型主題清單
-   - **資料來源**：repo 內靜態 JSON（`src/data/discover/*.json`）
-   - 內容由人工策展（韓劇場景、咖啡廳、甜點、網美點…），版本與 app 一起發布
-   - 一鍵加入收藏夾，零後端成本
+8. **打卡心情 + 一句話** 🟢
+   - `Spot` 加 `mood?: 'love' | 'wow' | 'meh' | 'cry'` + `note: string`
+   - 卡片右上小貼紙呈現
+   - Trip Wrapped 可統計「最 ❤️ 的景點」、「最 😭 的踩雷」
 
 ---
 
-### ✨ Phase 3 — 「回國後還想打開」回憶層 (2-3 週)
+### ✨ Phase 3 — 「回國後還想打開」回憶層 (2 週)
 
-10. **旅行回顧 (Trip Wrapped)** 🟢
-    - 行程結束自動產生：天數、走路公里、料理 emoji、總花費、最愛景點
-    - Spotify Wrapped 風格分頁滑動，每頁可獨立匯出 PNG
-    - 純客端統計，無任何後端呼叫
+> 私用情境也想看回顧、也想做手帳，這層是「為自己做」。
 
-11. **手帳日記模式** 🟢
+9. **旅行回顧 (Trip Wrapped)** 🟢
+   - 行程結束自動產生：天數、走路公里、料理 emoji、總花費、最 ❤️ 景點、最常一起出現的旅伴 emoji
+   - Spotify Wrapped 風格分頁滑動，每頁可獨立匯出 PNG（私用主要是自己留念）
+   - 純客端統計，沿用 settlement.ts 模式
+
+10. **手帳日記模式** 🟢
     - 每日一頁貼照片、寫心情、選天氣 / 心情貼紙
     - 6-8 款 SVG 貼紙（拍立得、票根、章戳），打包進 bundle
     - 照片走 IndexedDB
 
-12. **照片地圖** 🟢
+11. **照片地圖** 🟢
     - MapPage 圖層：去過的點 → 照片小圓 pin（縮圖從 IndexedDB 讀）
     - 縮放聚合成「足跡」線
     - Kakao Map 已整合，零新增成本
 
-13. **徽章 & 成就** 🟢
-    - 規則寫死於前端（第一次出國、5 國、單日 20km、花費破 5 萬…）
-    - 純客端計算
+12. **PWA「加到主畫面」+ 行前提醒** 🟡
+    - `manifest.json` + service worker：用 `vite-plugin-pwa`
+    - 行前提醒用 **Notification Trigger API**（本地排程，不需後端）
+    - iOS Safari fallback：開 App 時顯示倒數 banner
 
-14. **PWA「加到主畫面」+ 行前提醒** 🟡（**降級版**）
-    - `manifest.json` + service worker：✅ 免費
-    - **不做** Web Push（需要 VAPID 推送伺服器 + 訂閱表，KV 寫入會破表）
-    - 改用 **Notification Trigger API**（Chrome / Edge 支援）：在使用者開 App 時，以本地 service worker 排程「行前 1 天 / 出發當天」通知，不需後端訂閱
-    - iOS Safari fallback：開 App 時顯示倒數 banner（「再 2 天就要出發囉 ✈️」）
-
-> ⚠️ **被刪減 / 延後的功能**（不適合免費方案）：
-> - 真即時協作（WebSocket）→ 留待付費方案
-> - 推播訂閱中心 → 改用本地 Notification Trigger
-> - 雲端照片相簿 → 改用裝置端 IndexedDB + 「同網域多裝置」備份留待 R2 加掛
+> ⚠️ **私用情境下確定不做的功能**：
+> - Discover 熱門打卡點策展（自己貼 IG 連結即可）
+> - 閨蜜邀請卡 / QR 流程（6 碼直接 LINE 傳就好）
+> - 病毒式分享機制
+> - 徽章 / 成就（無社交比較需求）
+> - 多語對照（自己查得動）
 
 ---
 
@@ -175,14 +215,16 @@
 
 ## 五、免費方案約束 & 技術策略
 
-### 5.1 現況後端盤點
+### 5.1 現況後端盤點（私用情境）
 
-| 服務 | 免費額度 | 目前用量 | 風險 |
+| 服務 | 免費額度 | 私用 (2-4 人) 實際用量估計 | 風險 |
 |---|---|---|---|
-| Cloudflare Workers | 100k req / day | 匯率代理 + sync 兩條路由 | 🟢 充裕 |
-| Cloudflare KV | 1GB 儲存 / **1k writes / day** / 100k reads / day / 25MB 單值上限 | 每次儲存行程 = 1 write | 🟠 寫入很緊 |
-| Gemini API | 依模型，RPM / RPD 有限 | geminiSearchService 已使用 | 🟠 高頻會撞牆 |
-| 照片儲存 | **目前無** | — | 🔴 新功能要避開 KV |
+| Cloudflare Workers | 100k req / day | 匯率代理 + sync ≈ 數十 req / day | 🟢 完全無風險 |
+| Cloudflare KV | 1GB / 1k writes / day / 25MB 單值 | 一天最多手動同步幾次 ≈ 數 write | 🟢 完全無風險 |
+| Gemini API | 依模型 RPM / RPD | AI 對話私用約幾十次 / 趟旅行 | 🟢 加客端快取後幾乎不踩 |
+| 照片儲存 | **無後端** | 一趟旅行 200-500 張 | 🟠 不能塞 KV，需 IndexedDB |
+
+**結論**：私用情境免費額度是富餘的，**不需要把寫入降頻成「手動同步」**。維持自動 sync 即可，反而提升閨蜜共用體驗。
 
 ### 5.2 設計鐵則
 
@@ -196,25 +238,22 @@
    - 照片只存 `photoId` 參考、不存 base64
    - 估算：100 個景點 + 完整 metadata ≈ 30-80KB，遠低於 25MB 單值上限
 
-3. **寫入頻率節流**
-   - 客端 debounce 5 秒 + 顯示「最後同步：3 秒前」
-   - 「自動同步」改為「手動同步」按鈕 + 重大變更（行程儲存）才寫
-   - 1k writes / day 約 = 30-50 個活躍使用者 / 天，超出再考慮升級
+3. **寫入頻率**（私用情境放寬）
+   - 維持既有 sync 邏輯，加 debounce 3 秒避免亂寫
+   - 不需要降頻為手動同步，2-4 人共用一天不會超過 50 次寫入
 
 4. **AI 用量保護**
-   - 客端快取 prompt → 答案 7 天（localStorage / IndexedDB）
-   - 共通 prompt（如「弘大咖啡廳推薦」）在 KV 也快取一份共享給所有人，KV TTL 30 天
-   - 每位使用者每日上限 20-30 則對話（顯示倒數）
-   - 答案壓縮到 ≤200 字，省 token
+   - 客端快取 prompt → 答案 7 天（localStorage）
+   - 答案壓縮到 ≤200 字省 token
+   - 私用無濫用風險，不顯示倒數，但保留 console log 供除錯
 
 5. **靜態資料優先**
-   - Discover、徽章定義、貼紙資源 → 全部打包進 repo / bundle
-   - 不為了「之後可能要動態更新」而開 KV / API，直到真的需要
+   - 貼紙資源、徽章定義 → 打包進 bundle
+   - 不為「未來可能動態更新」開 KV / API
 
-6. **推播改用本地排程**
-   - 不做 Web Push 訂閱中心（要 VAPID + 訂閱表 + 排程觸發）
-   - 改用 **Notification Trigger API**（PWA 本地排程），無後端
-   - 不支援的瀏覽器 fallback 為開 App 時顯示倒數 banner
+6. **推播用本地排程**
+   - 用 Notification Trigger API（PWA 本地排程），不做 Web Push 訂閱中心
+   - iOS Safari fallback 為開 App 時顯示倒數 banner
 
 ### 5.3 工具與套件選型
 
@@ -233,19 +272,32 @@
 
 ---
 
-## 六、優先建議的「下一步」（免費方案版）
+## 六、優先建議的「下一步」（私用 × 雙視角版）
 
-如果只能做三件事，先做：
+### 第一週：清債 + Dark Mode（半天 + 半天）
 
-1. ✅ **Dark Mode**（純 CSS，零成本，立即有感）
-2. ✅ **Story Card 匯出器**（純客端 PNG，流量最大、最戳爆點）
-3. ✅ **多照片 + Trip Wrapped**（純 IndexedDB + 客端統計，把 App 從「規劃工具」升級為「回憶相簿」）
+1. **Phase 0 全部清掉**（B1-B5、B11，半天）
+2. **Dark Mode**（半天，純 CSS 切換）
 
-這三件**完全不增加任何後端成本**，卻能把體驗質變。等使用者數成長、確認需要更多後端能力時，再評估：
-- 加掛 R2（照片跨裝置同步）
-- 升級 Workers Paid（10M req / month、$5 起跳）
-- 切換 Gemini 付費模型
+立刻有感，也讓接下來的開發站在乾淨的地基上。
+
+### 第二週：照片基底 + Story Card
+
+3. **多照片 + IndexedDB 儲存**（2-3 天）
+4. **Story Card 匯出器**（1-2 天）
+
+這兩件是後續 Trip Wrapped、手帳、照片地圖的共用基礎。
+
+### 第三週起：依當下旅行需求挑功能
+
+依照下一趟出國前 1 個月，挑 Phase 2 中最需要的（例如：要去韓國就先做 OOTD + 採購清單）。**私用情境的好處是可以「即時為自己做」，不用為了不存在的使用者過度設計**。
+
+### 工程師角度的長期叮嚀
+
+- B6（routing facade）/ B7（search facade）/ B8（tripStore 切片）**等到下次要動那塊功能時順手做**，不要為重構而重構
+- 每加一個新欄位都要進 `types.ts`，避免散落 magic string
+- 新功能優先用既有 token 與既有元件（例如 Outfit 的卡片直接複用 SpotCard 的視覺語言）
 
 ---
 
-*此規劃僅針對「25 歲女性 IG 用戶」單一 persona，未涵蓋男性、家庭、商務出差等其他客群。實作前建議先抓 5 位真實使用者做 30 分鐘訪談驗證痛點排序。*
+*雙視角審視於 2026-04-30 完成。情境：私人使用（本人 + 旅伴）。下次審視觸發點：當行程數 > 5 趟、或考慮對外公開時，重新評估 Discover / 邀請卡 / 推播訂閱中心等被刪減項目。*
