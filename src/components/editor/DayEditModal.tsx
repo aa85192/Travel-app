@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ModalShell } from './ModalShell';
 import { useTripStore } from '../../stores/tripStore';
 import { useUIStore } from '../../stores/uiStore';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 import { Trash2, Calendar } from 'lucide-react';
 
 export const DayEditModal: React.FC = () => {
@@ -107,7 +107,7 @@ export const DayEditModal: React.FC = () => {
         onConfirm={handleDelete}
         title="確定刪除這一天？"
         message="此動作將會刪除該日的所有行程與景點，且無法復原。"
-        isDangerous
+        variant="danger"
         confirmText="確定刪除"
       />
     </>

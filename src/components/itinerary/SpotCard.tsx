@@ -4,8 +4,9 @@ import {
   MoreHorizontal, MapPin, Clock, CircleDollarSign, Edit2, Trash2, Copy,
   ListChecks, Plus, X, Check,
 } from 'lucide-react';
-import { Spot } from '../../types';
+import { Spot, MOOD_META } from '../../types';
 import { PhotoThumbnail } from '../common/PhotoThumbnail';
+import { LocalPhoto } from '../common/LocalPhoto';
 import { openInNaverMap } from '../../utils/deepLink';
 import { useUIStore } from '../../stores/uiStore';
 import { useTripStore } from '../../stores/tripStore';
@@ -243,6 +244,14 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
           >
             {index + 1}
           </div>
+          {spot.mood && (
+            <div
+              className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full flex items-center justify-center text-base bg-white shadow-md border-2 border-milk-tea-50"
+              title={MOOD_META[spot.mood].label}
+            >
+              {MOOD_META[spot.mood].emoji}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -378,6 +387,23 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
           >
             <div className="pt-4 space-y-4">
               <SpotTodoList spot={spot} dayNumber={dayNumber} />
+
+              {spot.photoIds && spot.photoIds.length > 0 && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {spot.photoIds.map((id) => (
+                    <div key={id} className="aspect-square rounded-xl overflow-hidden bg-milk-tea-100">
+                      <LocalPhoto photoId={id} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {spot.moodNote && (
+                <div className="text-xs text-milk-tea-700 bg-white/90 p-3 rounded-2xl border border-milk-tea-200 flex items-start gap-2">
+                  {spot.mood && <span className="text-base leading-none">{MOOD_META[spot.mood].emoji}</span>}
+                  <span className="font-medium">{spot.moodNote}</span>
+                </div>
+              )}
 
               {spot.notes && (
                 <div className="text-xs text-milk-tea-600 bg-white/80 p-3 rounded-2xl border border-milk-tea-100 italic">

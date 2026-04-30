@@ -10,6 +10,15 @@ export type SpotCategory =
 
 export type TransportMode = 'walking' | 'bus' | 'subway' | 'taxi' | 'uber';
 
+export type Mood = 'love' | 'wow' | 'meh' | 'cry';
+
+export const MOOD_META: Record<Mood, { emoji: string; label: string; color: string }> = {
+  love: { emoji: '🥰', label: '超愛', color: '#FF8FAF' },
+  wow:  { emoji: '✨', label: '驚喜', color: '#FFD4B8' },
+  meh:  { emoji: '😐', label: '還好', color: '#ADA0A5' },
+  cry:  { emoji: '😭', label: '踩雷', color: '#AAB6FB' },
+};
+
 export interface Participant {
   id: string;
   name: string;
@@ -30,8 +39,6 @@ export interface CollectionCategory {
   color: string;
   links?: CollectionLink[];
 }
-
-export type MerchantCategory = CollectionCategory;
 
 export interface Expense {
   id: string;
@@ -79,6 +86,8 @@ export interface Spot {
   address: string;
   addressLocal?: string;
   photo: string;
+  /** Local IndexedDB photo IDs (multi-photo gallery). Synced as IDs only; blobs stay on device. */
+  photoIds?: string[];
   category: SpotCategory;
   lat: number;
   lng: number;
@@ -86,6 +95,10 @@ export interface Spot {
   cost?: number;
   currency?: string;
   notes?: string;
+  /** One-line user impression captured after visiting. */
+  moodNote?: string;
+  /** User reaction sticker. */
+  mood?: Mood;
   tags?: string[];
   openingHours?: string;
   rating?: number;

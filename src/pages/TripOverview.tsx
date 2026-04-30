@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   ChevronLeft, Cloud, CloudDownload, Map as MapIcon, List,
   MoreVertical, Edit2, Plus, GripVertical, Calendar, MapPin,
-  Copy, Check, Loader2, CloudOff,
+  Copy, Check, Loader2, CloudOff, Share2,
 } from 'lucide-react';
 import { DaySelector } from '../components/itinerary/DaySelector';
 import { SpotCard } from '../components/itinerary/SpotCard';
@@ -19,6 +19,7 @@ import { ReorderModeBanner } from '../components/reorder/ReorderModeBanner';
 import { SpotReorderMode } from '../components/reorder/SpotReorderMode';
 import { DayReorderMode } from '../components/reorder/DayReorderMode';
 import { saveTrip, loadTrip, getOrCreateSyncCode } from '../services/syncService';
+import { StoryCardExporter } from '../components/share/StoryCardExporter';
 
 interface TripOverviewProps {
   onBack: () => void;
@@ -30,6 +31,7 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
   const [currentDay, setCurrentDay] = useState(1);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [showTripMenu, setShowTripMenu] = useState(false);
+  const [showStoryCard, setShowStoryCard] = useState(false);
 
   // Cloud Sync
   const [showSyncPanel, setShowSyncPanel] = useState(false);
@@ -147,6 +149,12 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
                         className="w-full px-4 py-2 text-left text-sm text-milk-tea-700 hover:bg-milk-tea-50 flex items-center"
                       >
                         <Calendar size={14} className="mr-2" /> 重新排序天數
+                      </button>
+                      <button
+                        onClick={() => { setShowStoryCard(true); setShowTripMenu(false); }}
+                        className="w-full px-4 py-2 text-left text-sm text-milk-tea-700 hover:bg-milk-tea-50 flex items-center"
+                      >
+                        <Share2 size={14} className="mr-2" /> 分享旅程卡片
                       </button>
                     </motion.div>
                   </>
@@ -394,6 +402,8 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
       <DayEditModal />
       <TripInfoEditModal />
       <CopySpotModal />
+
+      <StoryCardExporter isOpen={showStoryCard} onClose={() => setShowStoryCard(false)} />
     </div>
   );
 };

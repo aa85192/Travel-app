@@ -1,7 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export function generateMilkTeaPalette(hue: number): Record<string, string> {
+export type ThemeMode = 'light' | 'dark' | 'auto';
+
+export function generateMilkTeaPalette(
+  hue: number,
+  mode: 'light' | 'dark' = 'light',
+): Record<string, string> {
+  if (mode === 'dark') {
+    // Inverted lightness scale: 50 → darkest bg, 900 → lightest text
+    return {
+      '--color-milk-tea-50':  `hsl(${hue}, 22%, 9%)`,
+      '--color-milk-tea-100': `hsl(${hue}, 20%, 15%)`,
+      '--color-milk-tea-200': `hsl(${hue}, 18%, 22%)`,
+      '--color-milk-tea-300': `hsl(${hue}, 18%, 32%)`,
+      '--color-milk-tea-400': `hsl(${hue}, 28%, 55%)`,
+      '--color-milk-tea-500': `hsl(${hue}, 60%, 70%)`,
+      '--color-milk-tea-600': `hsl(${hue}, 70%, 78%)`,
+      '--color-milk-tea-700': `hsl(${hue}, 75%, 85%)`,
+      '--color-milk-tea-800': `hsl(${hue}, 80%, 91%)`,
+      '--color-milk-tea-900': `hsl(${hue}, 90%, 96%)`,
+    };
+  }
   return {
     '--color-milk-tea-50':  `hsl(${hue}, 100%, 98%)`,
     '--color-milk-tea-100': `hsl(${hue}, 97%, 92%)`,
@@ -16,11 +36,29 @@ export function generateMilkTeaPalette(hue: number): Record<string, string> {
   };
 }
 
-export function applyThemePalette(hue: number): void {
+function resolveMode(mode: ThemeMode): 'light' | 'dark' {
+  if (mode === 'auto') {
+    return typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+  return mode;
+}
+
+export function applyTheme(hue: number, mode: ThemeMode): void {
   const root = document.documentElement;
-  for (const [key, value] of Object.entries(generateMilkTeaPalette(hue))) {
+  const resolved = resolveMode(mode);
+  root.dataset.theme = resolved;
+  for (const [key, value] of Object.entries(generateMilkTeaPalette(hue, resolved))) {
     root.style.setProperty(key, value);
   }
+}
+
+/** Backwards-compat wrapper. Always uses current themeMode from store. */
+export function applyThemePalette(hue: number): void {
+  const mode = useSettingsStore.getState().themeMode;
+  applyTheme(hue, mode);
 }
 
 export const CURRENCIES = [
@@ -42,10 +80,12 @@ const DEFAULT_RATES: Record<string, number> = Object.fromEntries(
 
 interface SettingsState {
   themeHue: number;
+  themeMode: ThemeMode;
   travelCurrency: CurrencyCode;
   exchangeRates: Record<string, number>; // 1 TWD → N foreign units
   cardDensity: CardDensity;
   setThemeHue: (hue: number) => void;
+  setThemeMode: (mode: ThemeMode) => void;
   setTravelCurrency: (code: CurrencyCode) => void;
   setExchangeRate: (code: string, rate: number) => void;
   setCardDensity: (density: CardDensity) => void;
@@ -53,15 +93,20 @@ interface SettingsState {
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       themeHue: 340,
+      themeMode: 'light',
       travelCurrency: 'KRW',
       exchangeRates: DEFAULT_RATES,
       cardDensity: 'comfortable',
 
       setThemeHue: (hue) => {
-        applyThemePalette(hue);
+        applyTheme(hue, get().themeMode);
         set({ themeHue: hue });
+      },
+      setThemeMode: (mode) => {
+        applyTheme(get().themeHue, mode);
+        set({ themeMode: mode });
       },
       setTravelCurrency: (code) => set({ travelCurrency: code }),
       setExchangeRate: (code, rate) =>
@@ -71,3 +116,11 @@ export const useSettingsStore = create<SettingsState>()(
     { name: 'travel-app-settings' }
   )
 );
+
+// Auto-mode: react to OS theme changes
+if (typeof window !== 'undefined') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    const { themeHue, themeMode } = useSettingsStore.getState();
+    if (themeMode === 'auto') applyTheme(themeHue, themeMode);
+  });
+}

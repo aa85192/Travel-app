@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Globe, Image as ImageIcon, Clock, CircleDollarSign, Search, Loader2, ExternalLink, X, Sparkles, Map } from 'lucide-react';
-import { Spot, SpotCategory } from '../../types';
+import { Spot, SpotCategory, Mood, MOOD_META } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
+import { PhotoGalleryEditor } from '../common/PhotoGalleryEditor';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
 import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
 import { searchSpotsWithGemini, GeminiSpotResult } from '../../services/geminiSearchService';
@@ -511,6 +512,19 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
 
         <div>
           <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1">
+            旅遊相簿（裝置端，最多 9 張）
+          </label>
+          <PhotoGalleryEditor
+            photoIds={formData.photoIds || []}
+            onChange={(ids) => setFormData({ ...formData, photoIds: ids })}
+          />
+          <p className="text-[10px] text-milk-tea-300 mt-1.5 ml-1">
+            照片只存在這台裝置，不會同步到雲端。
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1">
             建議停留時間 *
           </label>
           <DurationStepper
@@ -552,6 +566,46 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             className="w-full px-4 py-3 bg-white border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors min-h-[100px] resize-none"
             placeholder="推薦穿韓服免費入場！"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-milk-tea-500 uppercase tracking-wider mb-1.5 ml-1">
+            玩過後的心情
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {(['love', 'wow', 'meh', 'cry'] as Mood[]).map((m) => {
+              const meta = MOOD_META[m];
+              const active = formData.mood === m;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, mood: active ? undefined : m })
+                  }
+                  className={`flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all ${
+                    active
+                      ? 'bg-milk-tea-50 border-milk-tea-400 scale-105'
+                      : 'bg-white border-milk-tea-100 hover:border-milk-tea-300'
+                  }`}
+                  style={active ? { borderWidth: 2 } : undefined}
+                >
+                  <span className="text-xl mb-0.5">{meta.emoji}</span>
+                  <span className="text-[10px] font-bold text-milk-tea-500">
+                    {meta.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <input
+            type="text"
+            value={formData.moodNote || ''}
+            onChange={(e) => setFormData({ ...formData, moodNote: e.target.value })}
+            placeholder="一句話印象（例：氣氛超棒、人爆多）"
+            maxLength={40}
+            className="w-full mt-2 px-4 py-2.5 bg-white border border-milk-tea-200 rounded-xl text-sm focus:border-milk-tea-400 outline-none transition-colors"
           />
         </div>
 

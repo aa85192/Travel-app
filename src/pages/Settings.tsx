@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Palette, Coins, LayoutList, Info, ChevronDown } from 'lucide-react';
+import { Palette, Coins, LayoutList, Info, ChevronDown, Sun, Moon, Monitor } from 'lucide-react';
 import { ColorWheelPicker } from '../components/settings/ColorWheelPicker';
 import {
   useSettingsStore,
   CURRENCIES,
   type CurrencyCode,
   type CardDensity,
+  type ThemeMode,
 } from '../stores/settingsStore';
 
 // ─── Section wrapper ──────────────────────────────────────────────────
@@ -213,6 +214,46 @@ function DensitySection() {
   );
 }
 
+// ─── Theme mode (light / dark / auto) ─────────────────────────────────
+const MODE_OPTIONS: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
+  { value: 'light', label: '亮色', icon: <Sun className="w-4 h-4" /> },
+  { value: 'dark',  label: '暗色', icon: <Moon className="w-4 h-4" /> },
+  { value: 'auto',  label: '跟隨系統', icon: <Monitor className="w-4 h-4" /> },
+];
+
+function ThemeModeSection() {
+  const { themeMode, setThemeMode } = useSettingsStore();
+  return (
+    <div className="px-5 py-4">
+      <p className="text-xs font-semibold text-milk-tea-400 mb-3 uppercase tracking-wide">
+        亮 / 暗模式
+      </p>
+      <div className="flex gap-2">
+        {MODE_OPTIONS.map(({ value, label, icon }) => {
+          const active = themeMode === value;
+          return (
+            <motion.button
+              key={value}
+              onClick={() => setThemeMode(value)}
+              animate={{ scale: active ? 1.03 : 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 24 }}
+              className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl border transition-colors ${
+                active
+                  ? 'bg-milk-tea-50 border-milk-tea-400 text-milk-tea-700'
+                  : 'bg-white border-milk-tea-100 text-milk-tea-400'
+              }`}
+              style={{ borderWidth: active ? 2 : 1 }}
+            >
+              {icon}
+              <span className="text-xs font-bold">{label}</span>
+            </motion.button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Settings page ───────────────────────────────────────────────
 export function Settings() {
   const { themeHue, setThemeHue, travelCurrency, exchangeRates } = useSettingsStore();
@@ -266,6 +307,8 @@ export function Settings() {
               ))}
             </div>
           </div>
+
+          <ThemeModeSection />
         </Section>
 
         {/* ── 貨幣與匯率 ───────────────────────────────── */}

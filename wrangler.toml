@@ -1,0 +1,9 @@
+name = "travel-app-backend"
+main = "cloudflare-worker.js"
+compatibility_date = "2025-01-01"
+
+# KV namespace for trip sync.
+# Create on Cloudflare dashboard (Workers → KV) and replace the id below.
+[[kv_namespaces]]
+binding = "TRIPS"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"

@@ -44,6 +44,29 @@
   --radius-photo: 14px;
 }
 
+/* ═══ Dark mode overrides ═══
+ * milk-tea palette is overridden via inline style by settingsStore.
+ * Below we override neutral + accent tokens that aren't hue-driven. */
+:root[data-theme="dark"] {
+  --color-neutral-white: hsl(340, 15%, 14%);
+  --color-neutral-gray-1: hsl(340, 12%, 19%);
+  --color-neutral-gray-2: hsl(340, 10%, 30%);
+  --color-neutral-gray-3: hsl(340, 8%, 65%);
+  --color-neutral-dark: hsl(340, 80%, 95%);
+
+  --color-accent-coral: #C4845F;
+  --color-accent-pink: #6E7BD8;
+  --color-accent-cream: #999366;
+  --color-accent-sage: #4FA89A;
+  --color-accent-sky: #6E9DD2;
+  --color-accent-warning: #B8945A;
+  --color-accent-error: #B8585F;
+}
+
+:root[data-theme="dark"] body {
+  color-scheme: dark;
+}
+
 @layer base {
   body {
     @apply bg-milk-tea-50 text-neutral-dark font-body;

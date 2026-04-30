@@ -11,7 +11,7 @@ import { BottomNav } from './components/layout/BottomNav';
 import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate';
 import { useTripStore } from './stores/tripStore';
 import { useUIStore } from './stores/uiStore';
-import { useSettingsStore, applyThemePalette } from './stores/settingsStore';
+import { useSettingsStore, applyTheme } from './stores/settingsStore';
 
 
 export default function App() {
@@ -19,10 +19,10 @@ export default function App() {
   const [activeTab, setActiveTab] = React.useState('home');
   const { trip, setTrip } = useTripStore();
   const { toasts, navigateTo, setNavigateTo } = useUIStore();
-  const { themeHue } = useSettingsStore();
+  const { themeHue, themeMode } = useSettingsStore();
 
   // Restore persisted theme on first render
-  React.useEffect(() => { applyThemePalette(themeHue); }, []);
+  React.useEffect(() => { applyTheme(themeHue, themeMode); }, []);
 
   // 接收來自子元件（如 TransitCard）的跨層導航請求
   React.useEffect(() => {

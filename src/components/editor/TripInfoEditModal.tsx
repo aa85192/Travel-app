@@ -3,7 +3,7 @@ import { ModalShell } from './ModalShell';
 import { useTripStore } from '../../stores/tripStore';
 import { useUIStore } from '../../stores/uiStore';
 import { Calendar, MapPin, Image as ImageIcon } from 'lucide-react';
-import { ConfirmDialog } from './ConfirmDialog';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 export const TripInfoEditModal: React.FC = () => {
   const { activeModal, closeModal, addToast } = useUIStore();
@@ -176,7 +176,7 @@ export const TripInfoEditModal: React.FC = () => {
         onConfirm={performUpdate}
         title="確定要縮短日期範圍嗎？"
         message={`⚠️ 縮短日期範圍將會刪除最後 ${trip.days.length - (Math.ceil(Math.abs(new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)) + 1)} 天的行程，此動作無法復原。`}
-        isDangerous
+        variant="danger"
       />
     </ModalShell>
   );
