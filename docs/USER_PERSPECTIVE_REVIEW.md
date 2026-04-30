@@ -56,83 +56,100 @@
 
 ## 三、改進規劃 (Roadmap)
 
-採三階段交付，每階段都可獨立上線、獨立分享話題。
+> 標記說明：🟢 純客端、零成本　🟡 用既有免費額度即可　🔴 對免費方案有壓力，需取捨
 
 ### 🚀 Phase 1 — 「拍照即分享」基底 (2-3 週)
 
-> 目標：讓行程「值得發限動」。
+> 目標：讓行程「值得發限動」。本階段全部 🟢 純客端，不增加任何後端負擔。
 
-1. **行程封面 / 景點多照片**
+1. **行程封面 / 景點多照片** 🟢
    - `Trip.coverImage` → `coverImages: string[]`
    - `Spot.photo` → `photos: string[]`，新增「相簿」grid view
-   - 上傳走 `<input type="file">` + IndexedDB / base64（保持無後端）
+   - **儲存策略**：本機 IndexedDB（不進 KV、不進 sync payload）
+   - 上傳時客端壓縮 → WebP / 長邊 1280px / Q=0.8 / 目標 ≤300KB
+   - sync 時只傳 photo `id`，照片本體留在裝置；雲端載回時若無對應 id 顯示 placeholder（明確標示「裝置端照片」）
 
-2. **Story Card 匯出器**
-   - 新元件 `<StoryCardExporter>`：把任一日 / 整趟行程匯出成 1080×1920 PNG
-   - 樣式：馬卡龍漸層底 + 熊熊 + 主要景點縮圖九宮格 + 日期戳
-   - 用 `html2canvas` 或 `dom-to-image-more` 直接截圖
-   - 一鍵下載 + Web Share API 分享
+2. **Story Card 匯出器** 🟢
+   - `<StoryCardExporter>`：1080×1920 PNG，馬卡龍漸層 + 熊熊 + 景點縮圖九宮格 + 日期戳
+   - 用 `modern-screenshot`（比 html2canvas 對 emoji / WebFont 更穩）
+   - Web Share API 直接分享 → 完全不經過後端
 
-3. **深色模式**
-   - 在 `settingsStore` 加 `theme: 'light' | 'dark' | 'auto'`
-   - `index.css` 新增 dark token：莫蘭迪深紫 + 玫瑰金強調色（避免純黑，保留可愛感）
-   - 每個元件審一次對比度
+3. **深色模式** 🟢
+   - `settingsStore` 加 `theme: 'light' | 'dark' | 'auto'`
+   - 用 CSS variable 切換，避免雙套 class
+   - 配色：莫蘭迪深紫 + 玫瑰金強調色（保留可愛感）
 
-4. **打卡心情標籤**
-   - `Spot` 新增 `mood?: 'love' | 'wow' | 'meh' | 'cry'` + 一句話 `note`
-   - 卡片右上小貼紙呈現
+4. **打卡心情標籤** 🟢
+   - `Spot` 加 `mood?: 'love' | 'wow' | 'meh' | 'cry'` + 一句話 `note`
+   - 純前端欄位，自動進 sync payload
 
 ---
 
 ### 🎀 Phase 2 — 「閨蜜共玩」社交層 (3-4 週)
 
-5. **閨蜜邀請卡**
-   - 取代 6 碼純文字：產出可愛邀請圖（「桃桃邀請你加入東京 5 日小旅行 🌸」）
-   - 帶 QR code + 同步代碼 + 出發倒數
+5. **閨蜜邀請卡** 🟢
+   - 純客端產生 PNG（QR code + 同步代碼 + 出發倒數）
+   - QR 用 `qrcode` npm 套件離線產生，不打外部 API
 
-6. **OOTD / 穿搭板**
-   - 新頁面 `Outfit.tsx`：每天一格，可貼穿搭參考圖、寫單品清單
-   - 串接該天天氣（已有 weatherService）→ 自動建議「外套 / 防曬」
+6. **OOTD / 穿搭板** 🟢
+   - 新頁面 `Outfit.tsx`：每天一格，貼穿搭參考圖、寫單品清單
+   - 圖片同照片策略（IndexedDB local-first）
+   - 串既有 weatherService → 「明天 12°C，建議大衣」
 
-7. **採購清單 / 代買**
+7. **採購清單 / 代買** 🟢
    - TodoList 擴充 `type: 'task' | 'shopping'`
-   - 購物項目可指派「幫誰買」+「預算上限」+「店家」
+   - 購物項可指派「幫誰買 / 預算上限 / 店家」
    - 與預算頁打通：勾掉時一鍵建立 expense
 
-8. **AI 旅行管家對話框**
+8. **AI 旅行管家對話框** 🟡
    - 浮動 FAB（粉色熊熊頭）→ 開啟對話 sheet
-   - 預設快捷：「推薦弘大咖啡廳」「我這天太空了幫我排」「找雨備方案」
+   - 預設快捷：「推薦弘大咖啡廳」「這天太空幫我排」「雨備方案」
+   - **免費額度保護**：
+     - 客端 debounce ≥1 秒、每 session 上限 20 則
+     - localStorage 快取常見 prompt 結果 7 天
+     - 答案上限 200 字（縮短 token）
+     - 顯示「今日剩餘次數 X / 30」避免被濫用
    - 用既有 `geminiSearchService`，只需做 UI
 
-9. **熱門打卡點 Discover**
-   - 新增 `Discover.tsx`：策展型主題清單（「韓劇場景」、「咖啡廳地圖」、「網美甜點」）
-   - 資料先用 JSON 靜態檔（後續可改 KV）
-   - 一鍵加入收藏夾
+9. **熱門打卡點 Discover** 🟢
+   - 新頁面 `Discover.tsx`：策展型主題清單
+   - **資料來源**：repo 內靜態 JSON（`src/data/discover/*.json`）
+   - 內容由人工策展（韓劇場景、咖啡廳、甜點、網美點…），版本與 app 一起發布
+   - 一鍵加入收藏夾，零後端成本
 
 ---
 
 ### ✨ Phase 3 — 「回國後還想打開」回憶層 (2-3 週)
 
-10. **旅行回顧 (Trip Wrapped)**
-    - 行程結束自動產生：天數、走路公里、最常吃的料理 emoji、總花費、最愛景點
-    - Spotify Wrapped 風格分頁滑動，每頁可單獨匯出
-    - 做病毒傳播主力
+10. **旅行回顧 (Trip Wrapped)** 🟢
+    - 行程結束自動產生：天數、走路公里、料理 emoji、總花費、最愛景點
+    - Spotify Wrapped 風格分頁滑動，每頁可獨立匯出 PNG
+    - 純客端統計，無任何後端呼叫
 
-11. **手帳日記模式**
-    - 每日一頁可貼照片、寫心情、選天氣貼紙、選心情貼紙
-    - 提供 6-8 款拍立得 / 票根 / 章戳貼紙
+11. **手帳日記模式** 🟢
+    - 每日一頁貼照片、寫心情、選天氣 / 心情貼紙
+    - 6-8 款 SVG 貼紙（拍立得、票根、章戳），打包進 bundle
+    - 照片走 IndexedDB
 
-12. **照片地圖**
-    - MapPage 加圖層：去過的點 → 照片小圓 pin
-    - 縮放後自動聚合成「足跡」線
+12. **照片地圖** 🟢
+    - MapPage 圖層：去過的點 → 照片小圓 pin（縮圖從 IndexedDB 讀）
+    - 縮放聚合成「足跡」線
+    - Kakao Map 已整合，零新增成本
 
-13. **徽章 & 成就**
-    - 第一次出國、5 國達成、單日步行 20km、總花費破 5 萬…
-    - 可愛貼紙風格，回顧頁可分享
+13. **徽章 & 成就** 🟢
+    - 規則寫死於前端（第一次出國、5 國、單日 20km、花費破 5 萬…）
+    - 純客端計算
 
-14. **PWA + 推播**
-    - 加 `manifest.json` + service worker
-    - 行前 1 天提醒：「明天就要出發囉 ✈️ 別忘了護照」
+14. **PWA「加到主畫面」+ 行前提醒** 🟡（**降級版**）
+    - `manifest.json` + service worker：✅ 免費
+    - **不做** Web Push（需要 VAPID 推送伺服器 + 訂閱表，KV 寫入會破表）
+    - 改用 **Notification Trigger API**（Chrome / Edge 支援）：在使用者開 App 時，以本地 service worker 排程「行前 1 天 / 出發當天」通知，不需後端訂閱
+    - iOS Safari fallback：開 App 時顯示倒數 banner（「再 2 天就要出發囉 ✈️」）
+
+> ⚠️ **被刪減 / 延後的功能**（不適合免費方案）：
+> - 真即時協作（WebSocket）→ 留待付費方案
+> - 推播訂閱中心 → 改用本地 Notification Trigger
+> - 雲端照片相簿 → 改用裝置端 IndexedDB + 「同網域多裝置」備份留待 R2 加掛
 
 ---
 
@@ -156,26 +173,78 @@
 
 ---
 
-## 五、技術注意事項
+## 五、免費方案約束 & 技術策略
 
-- **無後端原則**：照片用 IndexedDB（base64 太肥），單張壓 ≤500KB
-- **Story Card 匯出**：`html2canvas` 在 iOS Safari 對 emoji / web font 有坑，建議改 `dom-to-image-more` 或 `modern-screenshot`
-- **PWA**：Vite 用 `vite-plugin-pwa` 一行搞定
-- **Dark mode**：用 CSS variable 切換，不要寫兩套 class，避免維護負擔
-- **AI 對話**：geminiSearchService 已支援，只缺 streaming UI（用 SSE 或迭代呼叫）
-- **type-safety**：所有新欄位都加到 `types.ts`，避免散在各處
+### 5.1 現況後端盤點
+
+| 服務 | 免費額度 | 目前用量 | 風險 |
+|---|---|---|---|
+| Cloudflare Workers | 100k req / day | 匯率代理 + sync 兩條路由 | 🟢 充裕 |
+| Cloudflare KV | 1GB 儲存 / **1k writes / day** / 100k reads / day / 25MB 單值上限 | 每次儲存行程 = 1 write | 🟠 寫入很緊 |
+| Gemini API | 依模型，RPM / RPD 有限 | geminiSearchService 已使用 | 🟠 高頻會撞牆 |
+| 照片儲存 | **目前無** | — | 🔴 新功能要避開 KV |
+
+### 5.2 設計鐵則
+
+1. **照片永遠不進 KV**
+   - KV 單值 25MB / 總量 1GB / 寫入 1k 一天 — 任何情境都不適合存圖
+   - 一律走客端 **IndexedDB**（local-first）+ 壓縮（WebP / Q=0.8 / 長邊 1280）
+   - 若未來要跨裝置同步照片，加掛 **Cloudflare R2**（10GB 免費）並在 sync 時上傳，但 Phase 1-3 暫不啟用
+
+2. **sync payload 控制體積**
+   - payload 只放結構化資料（行程、景點、todo、花費）
+   - 照片只存 `photoId` 參考、不存 base64
+   - 估算：100 個景點 + 完整 metadata ≈ 30-80KB，遠低於 25MB 單值上限
+
+3. **寫入頻率節流**
+   - 客端 debounce 5 秒 + 顯示「最後同步：3 秒前」
+   - 「自動同步」改為「手動同步」按鈕 + 重大變更（行程儲存）才寫
+   - 1k writes / day 約 = 30-50 個活躍使用者 / 天，超出再考慮升級
+
+4. **AI 用量保護**
+   - 客端快取 prompt → 答案 7 天（localStorage / IndexedDB）
+   - 共通 prompt（如「弘大咖啡廳推薦」）在 KV 也快取一份共享給所有人，KV TTL 30 天
+   - 每位使用者每日上限 20-30 則對話（顯示倒數）
+   - 答案壓縮到 ≤200 字，省 token
+
+5. **靜態資料優先**
+   - Discover、徽章定義、貼紙資源 → 全部打包進 repo / bundle
+   - 不為了「之後可能要動態更新」而開 KV / API，直到真的需要
+
+6. **推播改用本地排程**
+   - 不做 Web Push 訂閱中心（要 VAPID + 訂閱表 + 排程觸發）
+   - 改用 **Notification Trigger API**（PWA 本地排程），無後端
+   - 不支援的瀏覽器 fallback 為開 App 時顯示倒數 banner
+
+### 5.3 工具與套件選型
+
+- **Story / 卡片匯出**：`modern-screenshot`（emoji / WebFont 比 `html2canvas` 穩）
+- **照片壓縮**：`browser-image-compression`（5kb gzipped）
+- **IndexedDB 包裝**：`idb-keyval`（極簡，不用 Dexie 那麼重）
+- **QR code**：`qrcode` 套件離線產生，不打外部 API
+- **PWA**：`vite-plugin-pwa`，一個設定搞定 manifest + service worker
+- **Dark mode**：CSS variable 切換，不引入額外套件
+
+### 5.4 監控建議（也是免費）
+
+- Cloudflare Workers 後台已自帶日請求 / KV ops 圖表，每週看一次即可
+- 在 Worker 內加 `console.log` + 用 `wrangler tail` 即時觀察
+- 客端錯誤暫時不接 Sentry（付費），先用 `try / catch` + IndexedDB 寫入錯誤 log，使用者回報時取出
 
 ---
 
-## 六、優先建議的「下一步」
+## 六、優先建議的「下一步」（免費方案版）
 
 如果只能做三件事，先做：
 
-1. ✅ **Story Card 匯出器** — 流量最大、技術最快、最戳爆點
-2. ✅ **Dark Mode** — 體驗債，做了立刻有感
-3. ✅ **多照片 + 旅行回顧 (Trip Wrapped)** — 把 App 從「規劃工具」升級為「回憶相簿」，留存率質變
+1. ✅ **Dark Mode**（純 CSS，零成本，立即有感）
+2. ✅ **Story Card 匯出器**（純客端 PNG，流量最大、最戳爆點）
+3. ✅ **多照片 + Trip Wrapped**（純 IndexedDB + 客端統計，把 App 從「規劃工具」升級為「回憶相簿」）
 
-完成這三件，App 就會從「實用」進化為「會主動想開」。
+這三件**完全不增加任何後端成本**，卻能把體驗質變。等使用者數成長、確認需要更多後端能力時，再評估：
+- 加掛 R2（照片跨裝置同步）
+- 升級 Workers Paid（10M req / month、$5 起跳）
+- 切換 Gemini 付費模型
 
 ---
 
