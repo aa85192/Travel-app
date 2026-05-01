@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { ImageOff } from 'lucide-react';
 
 interface PhotoThumbnailProps {
   src: string;
@@ -7,6 +8,9 @@ interface PhotoThumbnailProps {
 }
 
 export const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ src, alt, size = 'md' }) => {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [src]);
+
   const sizeClasses = {
     sm: 'w-12 h-12',
     md: 'w-16 h-16',
@@ -14,14 +18,24 @@ export const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ src, alt, size =
   };
 
   return (
-    <div className={`${sizeClasses[size]} rounded-photo overflow-hidden border-2 border-milk-tea-200 shadow-sm flex-shrink-0 bg-milk-tea-100`}>
-      <img
-        src={src}
-        alt={alt}
-        className="w-full h-full object-cover"
-        referrerPolicy="no-referrer"
-        loading="lazy"
-      />
+    <div className={`${sizeClasses[size]} rounded-photo overflow-hidden border-2 border-milk-tea-200 shadow-sm flex-shrink-0 bg-milk-tea-100 relative`}>
+      {failed || !src ? (
+        <div className="w-full h-full flex flex-col items-center justify-center text-milk-tea-300">
+          <ImageOff className="w-4 h-4" />
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+          loading="lazy"
+          onError={() => {
+            console.warn('[PhotoThumbnail] image failed to load:', src);
+            setFailed(true);
+          }}
+        />
+      )}
     </div>
   );
 };

@@ -157,13 +157,15 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     setIsFetchingPhoto(true);
     try {
       const photoUrl = await fetchWikipediaPhoto(query, formData.name);
+      console.info('[auto-photo] query:', query, 'fallback:', formData.name, '→', photoUrl);
       if (photoUrl) {
         setFormData({ ...formData, photo: photoUrl });
         addToast('✅ 已自動取得照片', 'success');
       } else {
         addToast('找不到相關照片，請手動貼上圖片網址', 'error');
       }
-    } catch {
+    } catch (e) {
+      console.error('[auto-photo] failed:', e);
       addToast('照片取得失敗', 'error');
     } finally {
       setIsFetchingPhoto(false);

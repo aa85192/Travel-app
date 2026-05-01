@@ -1,33 +1,57 @@
 /**
  * Wikipedia Photo Service
- * 用景點名稱從 Wikipedia API 自動取得代表照片（免費、免 API key）
- * 優先查韓文維基（對韓國景點最準），備援英文維基
+ * Resolves landmark photos via Wikipedia, no API key required.
+ *
+ * Strategy (cheapest → fuzziest):
+ *   1. REST page summary on ko / en wiki with the exact title
+ *   2. MediaWiki action=query generator=search, ordered by relevance
+ *
+ * Returns the largest thumbnail Wikimedia exposes (we ask for ~600px).
  */
 
-async function searchWikiPhoto(query: string, lang: 'ko' | 'en'): Promise<string | null> {
+const REST_THUMB_PARAM = '?width=640';
+
+async function fetchPageSummaryThumb(title: string, lang: 'ko' | 'en'): Promise<string | null> {
+  try {
+    const url = `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    // Prefer originalimage when small, else thumbnail (which is a Wikimedia thumb URL)
+    const thumb: string | undefined = data?.thumbnail?.source;
+    if (!thumb) return null;
+    // Bump the px segment so we get a higher-res variant; if unmatched, leave as-is.
+    return thumb.replace(/\/\d+px-/, '/640px-');
+  } catch {
+    return null;
+  }
+}
+
+async function searchAndPickThumb(query: string, lang: 'ko' | 'en'): Promise<string | null> {
   try {
     const params = new URLSearchParams({
       action: 'query',
       generator: 'search',
       gsrsearch: query,
-      gsrlimit: '3',
+      gsrlimit: '5',
       prop: 'pageimages',
-      pithumbsize: '600',
+      pithumbsize: '640',
       format: 'json',
       origin: '*',
     });
-
     const res = await fetch(`https://${lang}.wikipedia.org/w/api.php?${params}`);
     if (!res.ok) return null;
-
     const data = await res.json();
     const pages: Record<string, any> = data?.query?.pages;
     if (!pages) return null;
 
-    for (const page of Object.values(pages)) {
+    // Sort by search rank (`index`) — Object.values order is not guaranteed.
+    const ranked = Object.values(pages).sort(
+      (a: any, b: any) => (a.index ?? 99) - (b.index ?? 99),
+    );
+    for (const page of ranked) {
       if (page.thumbnail?.source) {
-        // 換成較大尺寸
-        return page.thumbnail.source.replace(/\/\d+px-/, '/600px-');
+        return page.thumbnail.source.replace(/\/\d+px-/, '/640px-');
       }
     }
     return null;
@@ -37,25 +61,31 @@ async function searchWikiPhoto(query: string, lang: 'ko' | 'en'): Promise<string
 }
 
 /**
- * 依景點名稱取得 Wikipedia 代表圖片 URL
- * @param query 景點名稱（韓文或中英文皆可）
- * @param fallbackQuery 備用搜尋詞（如中文名或英文名）
+ * Resolves a representative photo for a landmark.
+ * @param query Primary lookup term (Korean / Japanese / Chinese / English name)
+ * @param fallbackQuery Secondary lookup term tried only if primary fails
  */
 export async function fetchWikipediaPhoto(
   query: string,
-  fallbackQuery?: string
+  fallbackQuery?: string,
 ): Promise<string | null> {
-  // 1. 韓文維基 + 原始查詢
-  const koResult = await searchWikiPhoto(query, 'ko');
-  if (koResult) return koResult;
+  const candidates = [query, fallbackQuery].filter((q): q is string => !!q && q.trim().length > 0);
+  const langs: ('ko' | 'en')[] = ['ko', 'en'];
 
-  // 2. 英文維基 + 原始查詢
-  const enResult = await searchWikiPhoto(query, 'en');
-  if (enResult) return enResult;
+  // Phase 1: direct page summary (highest precision, lowest cost)
+  for (const term of candidates) {
+    for (const lang of langs) {
+      const url = await fetchPageSummaryThumb(term, lang);
+      if (url) return url;
+    }
+  }
 
-  // 3. 若有備用查詢詞，再試一次英文維基
-  if (fallbackQuery && fallbackQuery !== query) {
-    return searchWikiPhoto(fallbackQuery, 'en');
+  // Phase 2: full-text search fallback
+  for (const term of candidates) {
+    for (const lang of langs) {
+      const url = await searchAndPickThumb(term, lang);
+      if (url) return url;
+    }
   }
 
   return null;
