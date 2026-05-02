@@ -1,13 +1,17 @@
 /**
- * Local-only photo store backed by IndexedDB.
- * Blobs never leave the device — only photo IDs are persisted in trip data
- * and synced to other devices, which then show a placeholder if the blob is
- * missing locally.
+ * Photo store
+ *  - Source of truth: Google Drive (via Cloudflare Worker proxy)
+ *  - Cache: IndexedDB on the uploading device for instant / offline access
+ *
+ * Photo IDs are Google Drive file IDs and are persisted inside trip JSON,
+ * so syncing trip data is enough — every device can resolve the URL via
+ * the Worker proxy.
  */
 import { get, set, del, keys, createStore } from 'idb-keyval';
 import imageCompression from 'browser-image-compression';
 
 const photoStore = createStore('travel-app-photos', 'photos');
+const WORKER_URL = 'https://visa-rate.aa85192.workers.dev';
 
 const COMPRESSION_OPTIONS = {
   maxSizeMB: 0.3,
@@ -17,47 +21,66 @@ const COMPRESSION_OPTIONS = {
   initialQuality: 0.8,
 };
 
-function newPhotoId(): string {
-  return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+async function compressImage(file: File): Promise<Blob> {
+  return imageCompression(file, COMPRESSION_OPTIONS);
 }
 
+/** Compress, upload to Drive via Worker, cache locally. Returns Drive fileId. */
 export async function savePhoto(file: File | Blob): Promise<string> {
-  const compressed = file instanceof File && file.size > COMPRESSION_OPTIONS.maxSizeMB * 1024 * 1024
-    ? await imageCompression(file, COMPRESSION_OPTIONS)
-    : file;
-  const id = newPhotoId();
-  await set(id, compressed, photoStore);
+  const blob = file instanceof File ? await compressImage(file) : file;
+  const res = await fetch(`${WORKER_URL}/photo`, {
+    method: 'POST',
+    headers: { 'Content-Type': blob.type || 'image/webp' },
+    body: blob,
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`upload failed (${res.status}): ${errBody.slice(0, 200)}`);
+  }
+  const { id } = (await res.json()) as { id: string };
+  await set(id, blob, photoStore);
   return id;
 }
 
 const urlCache = new Map<string, string>();
 
+/**
+ * Resolve a photoId to a displayable URL.
+ *   IndexedDB hit → blob URL (fast, offline)
+ *   miss          → Worker proxy URL (pulls from Drive on demand)
+ */
 export async function getPhotoUrl(id: string): Promise<string | null> {
+  if (!id) return null;
   if (urlCache.has(id)) return urlCache.get(id)!;
   const blob = await get<Blob>(id, photoStore);
-  if (!blob) return null;
-  const url = URL.createObjectURL(blob);
-  urlCache.set(id, url);
-  return url;
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    urlCache.set(id, url);
+    return url;
+  }
+  return `${WORKER_URL}/photo/${encodeURIComponent(id)}`;
 }
 
 export async function deletePhoto(id: string): Promise<void> {
-  const url = urlCache.get(id);
-  if (url) {
-    URL.revokeObjectURL(url);
-    urlCache.delete(id);
-  }
+  const cached = urlCache.get(id);
+  if (cached && cached.startsWith('blob:')) URL.revokeObjectURL(cached);
+  urlCache.delete(id);
   await del(id, photoStore);
+  fetch(`${WORKER_URL}/photo/${encodeURIComponent(id)}`, { method: 'DELETE' })
+    .catch((e) => console.warn('[photoStore] remote delete failed:', e));
 }
 
-/** Garbage-collect blobs no longer referenced by any spot/trip. */
+/** GC stale local cache entries. Drive remains source of truth. */
 export async function pruneOrphanPhotos(referencedIds: Set<string>): Promise<number> {
   const all = await keys(photoStore);
   let removed = 0;
   for (const k of all) {
     const id = String(k);
     if (!referencedIds.has(id)) {
-      await deletePhoto(id);
+      const cached = urlCache.get(id);
+      if (cached && cached.startsWith('blob:')) URL.revokeObjectURL(cached);
+      urlCache.delete(id);
+      await del(id, photoStore);
       removed++;
     }
   }

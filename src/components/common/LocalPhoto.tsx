@@ -8,34 +8,44 @@ interface LocalPhotoProps {
   className?: string;
 }
 
-/** Resolves a photoId from IndexedDB to an object URL for <img>. Shows
- * a placeholder when the blob isn't on this device (e.g. after sync). */
+/** Resolves a photoId to <img>. Falls back to ImageOff placeholder if both
+ *  the local IndexedDB cache and the Worker/Drive proxy can't serve the photo. */
 export const LocalPhoto: React.FC<LocalPhotoProps> = ({ photoId, alt, className }) => {
   const [url, setUrl] = useState<string | null>(null);
-  const [missing, setMissing] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    setMissing(false);
+    setFailed(false);
     setUrl(null);
     getPhotoUrl(photoId).then((u) => {
       if (cancelled) return;
       if (u) setUrl(u);
-      else setMissing(true);
+      else setFailed(true);
     });
     return () => { cancelled = true; };
   }, [photoId]);
 
-  if (missing) {
+  if (failed) {
     return (
       <div className={`flex flex-col items-center justify-center bg-milk-tea-100 text-milk-tea-300 ${className ?? ''}`}>
         <ImageOff className="w-5 h-5" />
-        <span className="text-[9px] mt-0.5">裝置端照片</span>
       </div>
     );
   }
   if (!url) {
     return <div className={`bg-milk-tea-100 animate-pulse ${className ?? ''}`} />;
   }
-  return <img src={url} alt={alt} className={className} />;
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className={className}
+      referrerPolicy="no-referrer"
+      onError={() => {
+        console.warn('[LocalPhoto] failed to load:', photoId, url);
+        setFailed(true);
+      }}
+    />
+  );
 };
