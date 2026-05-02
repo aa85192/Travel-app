@@ -1,4 +1,4 @@
-name = "travel-app-backend"
+name = "visa-rate"
 main = "cloudflare-worker.js"
 compatibility_date = "2025-01-01"
 
