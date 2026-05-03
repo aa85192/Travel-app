@@ -96,14 +96,16 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
       <ReorderModeBanner />
 
       {/* Header */}
-      <div className="relative h-64 overflow-hidden">
-        <img
-          src={trip.coverImage}
-          alt={trip.title}
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-milk-tea-900/80 via-milk-tea-900/20 to-transparent" />
+      <div className="relative h-64">
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src={trip.coverImage}
+            alt={trip.title}
+            className="w-full h-full object-cover"
+            referrerPolicy="no-referrer"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-milk-tea-900/80 via-milk-tea-900/20 to-transparent" />
+        </div>
 
         <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
           <button

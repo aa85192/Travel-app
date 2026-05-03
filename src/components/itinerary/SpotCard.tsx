@@ -230,7 +230,7 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 overflow-hidden hover:shadow-md transition-all"
+      className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 hover:shadow-md transition-all"
     >
       <div
         className={`flex items-start cursor-pointer active:scale-[0.99] transition-transform ${pad}`}
@@ -383,7 +383,7 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="px-4 pb-4 border-t border-milk-tea-50 bg-milk-tea-50/30"
+            className="px-4 pb-4 border-t border-milk-tea-50 bg-milk-tea-50/30 overflow-hidden"
           >
             <div className="pt-4 space-y-4">
               <SpotTodoList spot={spot} dayNumber={dayNumber} />
