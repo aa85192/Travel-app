@@ -22,6 +22,8 @@ export const LocalPhoto: React.FC<LocalPhotoProps> = ({ photoId, alt, className 
       if (cancelled) return;
       if (u) setUrl(u);
       else setFailed(true);
+    }).catch(() => {
+      if (!cancelled) setFailed(true);
     });
     return () => { cancelled = true; };
   }, [photoId]);

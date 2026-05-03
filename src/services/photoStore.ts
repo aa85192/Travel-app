@@ -52,13 +52,19 @@ const urlCache = new Map<string, string>();
 export async function getPhotoUrl(id: string): Promise<string | null> {
   if (!id) return null;
   if (urlCache.has(id)) return urlCache.get(id)!;
-  const blob = await get<Blob>(id, photoStore);
-  if (blob) {
-    const url = URL.createObjectURL(blob);
-    urlCache.set(id, url);
-    return url;
+  try {
+    const blob = await get<Blob>(id, photoStore);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      urlCache.set(id, url);
+      return url;
+    }
+  } catch (e) {
+    console.warn('[photoStore] IndexedDB read failed, falling back to remote:', e);
   }
-  return `${WORKER_URL}/photo/${encodeURIComponent(id)}`;
+  const url = `${WORKER_URL}/photo/${encodeURIComponent(id)}`;
+  urlCache.set(id, url);
+  return url;
 }
 
 export async function deletePhoto(id: string): Promise<void> {
