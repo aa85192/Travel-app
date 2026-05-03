@@ -1,19 +1,12 @@
 import { Trip } from './types';
 
-// 讓範例行程的日期永遠落在天氣預報範圍內（明天開始）
-function relativeDate(offsetDays: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().split('T')[0];
-}
-
 export const SAMPLE_TRIP: Trip = {
   id: "trip_seoul_2026",
-  title: "首爾四天三夜 ☕",
+  title: "首爾五天四夜 ☕",
   coverImage: "https://images.unsplash.com/photo-1517154421773-0529f29ea451?auto=format&fit=crop&q=80&w=1000",
   destination: "Seoul, Korea",
-  startDate: relativeDate(1),
-  endDate: relativeDate(4),
+  startDate: "2026-06-05",
+  endDate: "2026-06-09",
   participants: [
     { id: 'p1', name: '我', emoji: '🐱', color: '#FFACBB' },
     { id: 'p2', name: '小美', emoji: '🐰', color: '#AAB6FB' },
@@ -27,7 +20,7 @@ export const SAMPLE_TRIP: Trip = {
       currency: 'KRW',
       payerId: 'p1',
       splitWithIds: ['p1', 'p2', 'p3'],
-      date: relativeDate(1),
+      date: '2026-06-05',
       category: 'attraction',
       isShared: true,
     },
@@ -38,7 +31,7 @@ export const SAMPLE_TRIP: Trip = {
       currency: 'KRW',
       payerId: 'p2',
       splitWithIds: ['p1', 'p2', 'p3'],
-      date: relativeDate(1),
+      date: '2026-06-05',
       category: 'restaurant',
       isShared: true,
     }
@@ -55,7 +48,7 @@ export const SAMPLE_TRIP: Trip = {
   days: [
     {
       dayNumber: 1,
-      date: relativeDate(1),
+      date: "2026-06-05",
       title: "古宮巡禮 🏯",
       spots: [
         {
@@ -163,7 +156,7 @@ export const SAMPLE_TRIP: Trip = {
     },
     {
       dayNumber: 2,
-      date: relativeDate(2),
+      date: "2026-06-06",
       title: "弘大 & 明洞 🛍️",
       spots: [
         {
@@ -228,7 +221,7 @@ export const SAMPLE_TRIP: Trip = {
     },
     {
       dayNumber: 3,
-      date: relativeDate(3),
+      date: "2026-06-07",
       title: "漢江 & 樂天世界 🎡",
       spots: [
         {
@@ -293,8 +286,8 @@ export const SAMPLE_TRIP: Trip = {
     },
     {
       dayNumber: 4,
-      date: relativeDate(4),
-      title: "仁寺洞 & 返程 ✈️",
+      date: "2026-06-08",
+      title: "仁寺洞 & 東大門 🌃",
       spots: [
         {
           id: "spot_8",
@@ -315,6 +308,13 @@ export const SAMPLE_TRIP: Trip = {
           order: 0
         }
       ],
+      transits: []
+    },
+    {
+      dayNumber: 5,
+      date: "2026-06-09",
+      title: "返程 ✈️",
+      spots: [],
       transits: []
     }
   ]
