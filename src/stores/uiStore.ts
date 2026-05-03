@@ -15,6 +15,12 @@ export interface MapRouteRequest {
   mode: 'walking' | 'bus' | 'subway' | 'taxi' | 'uber';
 }
 
+export interface MapPreviewSpot {
+  lat: number;
+  lng: number;
+  name: string;
+}
+
 interface UIState {
   activeModal: ModalType;
   editingContext: EditingContext | null;
@@ -22,6 +28,7 @@ interface UIState {
   toasts: { id: string; message: string; type: 'success' | 'error' | 'warning' }[];
   navigateTo: string | null;
   mapRouteRequest: MapRouteRequest | null;
+  mapPreviewSpot: MapPreviewSpot | null;
 
   openModal: (type: ModalType, context: EditingContext) => void;
   closeModal: () => void;
@@ -30,6 +37,7 @@ interface UIState {
   removeToast: (id: string) => void;
   setNavigateTo: (tab: string | null) => void;
   setMapRoute: (req: MapRouteRequest | null) => void;
+  setMapPreviewSpot: (spot: MapPreviewSpot | null) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -39,12 +47,14 @@ export const useUIStore = create<UIState>((set) => ({
   toasts: [],
   navigateTo: null,
   mapRouteRequest: null,
+  mapPreviewSpot: null,
 
   openModal: (type, context) => set({ activeModal: type, editingContext: context }),
   closeModal: () => set({ activeModal: null, editingContext: null }),
   setReorderMode: (mode) => set({ reorderMode: mode }),
   setNavigateTo: (tab) => set({ navigateTo: tab }),
   setMapRoute: (req) => set({ mapRouteRequest: req }),
+  setMapPreviewSpot: (spot) => set({ mapPreviewSpot: spot }),
   addToast: (message, type = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
     set((state) => ({

@@ -49,7 +49,7 @@ declare global {
 }
 
 export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
-  const { mapRouteRequest } = useUIStore();
+  const { mapRouteRequest, mapPreviewSpot, setMapPreviewSpot } = useUIStore();
   const mapRef   = useRef<HTMLDivElement>(null);
   const kakaoMap = useRef<any>(null);
 
@@ -223,9 +223,25 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     overlay.setMap(map);
   }
 
+  // ── 單點預覽（從 SpotFormFields 的 MiniMap 點進來）──────────
+  useEffect(() => {
+    if (req || !sdkReady || !mapRef.current || !mapPreviewSpot) return;
+    const { lat, lng, name } = mapPreviewSpot;
+    const center = new window.kakao.maps.LatLng(lat, lng);
+    const map = new window.kakao.maps.Map(mapRef.current, {
+      center,
+      level: 3,
+    });
+    kakaoMap.current = map;
+    addMarker(map, lat, lng, name || '此處', '#E8538C', name || '景點');
+  }, [sdkReady, req, mapPreviewSpot]);
+
+  // 離開地圖頁時清掉 preview，避免下次進來還顯示舊的
+  useEffect(() => () => setMapPreviewSpot(null), [setMapPreviewSpot]);
+
   // ── 無路線請求時：預設顯示釜山地圖 ─────────────────────────
   useEffect(() => {
-    if (req || !sdkReady || !mapRef.current) return;
+    if (req || !sdkReady || !mapRef.current || mapPreviewSpot) return;
     // 釜山市中心
     const BUSAN = { lat: 35.1795543, lng: 129.0756416 };
     const map = new window.kakao.maps.Map(mapRef.current, {
@@ -233,7 +249,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
       level: 5,
     });
     kakaoMap.current = map;
-  }, [sdkReady, req]);
+  }, [sdkReady, req, mapPreviewSpot]);
 
   if (!req) {
     return (
@@ -243,10 +259,17 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
           <button onClick={onBack} className="mr-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-milk-tea-100 transition-colors">
             <ArrowLeft className="w-5 h-5 text-milk-tea-600" />
           </button>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-bold text-milk-tea-900">探索釜山</span>
-            <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100">Busan, Korea</span>
-          </div>
+          {mapPreviewSpot ? (
+            <div className="flex items-center space-x-2 min-w-0">
+              <span className="text-sm font-bold text-milk-tea-900 truncate">{mapPreviewSpot.name || '景點預覽'}</span>
+              <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100 flex-shrink-0">單點預覽</span>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-bold text-milk-tea-900">探索釜山</span>
+              <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100">Busan, Korea</span>
+            </div>
+          )}
         </div>
 
         {/* 地圖 */}
