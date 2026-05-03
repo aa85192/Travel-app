@@ -4,6 +4,7 @@ import { Spot, SpotCategory, Mood, MOOD_META } from '../../types';
 import { TagInput } from './TagInput';
 import { DurationStepper } from './DurationStepper';
 import { PhotoGalleryEditor } from '../common/PhotoGalleryEditor';
+import { MiniMap } from '../common/MiniMap';
 import { parseNaverMapLink } from '../../services/naverLinkParser';
 import { searchPlaces, PlaceResult } from '../../services/placeSearchService';
 import { searchSpotsWithGemini, GeminiSpotResult } from '../../services/geminiSearchService';
@@ -141,11 +142,25 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
     }
   };
 
-  // AI 結果點選 → 貼韓文名到搜尋欄，讓使用者自行按 🗺️ 開 NaverMap
-  const handleSelectGeminiPlace = (place: GeminiSpotResult) => {
-    setSearchQuery(place.nameKo);
+  // AI 結果點選 → 用韓文名直接打 placeSearch 並自動匯入第一筆結果
+  const handleSelectGeminiPlace = async (place: GeminiSpotResult) => {
     setGeminiResults([]);
-    searchInputRef.current?.focus();
+    setSearchQuery(place.nameKo);
+    setIsSearching(true);
+    try {
+      const results = await searchPlaces(place.nameKo);
+      if (results.length === 0) {
+        addToast(`找不到「${place.nameZh}」的座標，請手動搜尋`, 'warning');
+        searchInputRef.current?.focus();
+        return;
+      }
+      await handleSelectPlace(results[0]);
+    } catch (e) {
+      console.warn('[ai-import]', e);
+      addToast('地點匯入失敗，請手動搜尋', 'error');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleFetchPhoto = async () => {
@@ -266,7 +281,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             {geminiResults.length > 0 && (
               <div className="rounded-xl border border-[#AAB6FB] overflow-hidden divide-y divide-[#E8ECFF] bg-white shadow-md">
                 <div className="px-3 py-1.5 bg-[#E8ECFF] flex items-center justify-between">
-                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ AI 景點建議（點選→貼到搜尋欄，再按 🗺️）</span>
+                  <span className="text-[9px] font-black text-[#2D3A8A] tracking-wide">✨ AI 景點建議（點選自動匯入）</span>
                   <button type="button" onClick={() => setGeminiResults([])} className="text-[#8896F5] hover:text-[#2D3A8A]">
                     <X size={12} />
                   </button>
@@ -462,6 +477,14 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             />
           </div>
         </div>
+
+        {Number.isFinite(formData.lat) && Number.isFinite(formData.lng) && (formData.lat !== 0 || formData.lng !== 0) && (
+          <MiniMap
+            lat={formData.lat as number}
+            lng={formData.lng as number}
+            name={formData.name}
+          />
+        )}
       </div>
 
       {/* Media & Time */}

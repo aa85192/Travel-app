@@ -1,11 +1,11 @@
 /**
  * 地點搜尋服務 — 統一入口
  *
- * 優先使用 Naver Local Search API（若有設定憑證）
- * 備援：Nominatim (OpenStreetMap) — 免費、免 API key
+ * 優先順序：Kakao（韓國最準）→ Naver（若有設定憑證）→ Nominatim (OSM)
  */
 
 import { isNaverSearchConfigured, searchNaverPlaces } from './naverSearchService';
+import { searchKakaoPlaces } from './kakaoSearchService';
 
 export interface PlaceResult {
   id: string;
@@ -52,15 +52,23 @@ async function searchNominatim(query: string): Promise<PlaceResult[]> {
   });
 }
 
-/** 搜尋韓國地點（自動選擇最佳後端） */
+/** 搜尋韓國地點（Kakao → Naver → Nominatim） */
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   if (!query.trim()) return [];
 
+  try {
+    const kakao = await searchKakaoPlaces(query);
+    if (kakao.length > 0) return kakao;
+  } catch (e) {
+    console.warn('[place-search] Kakao failed, falling through:', e);
+  }
+
   if (isNaverSearchConfigured) {
     try {
-      return await searchNaverPlaces(query);
+      const naver = await searchNaverPlaces(query);
+      if (naver.length > 0) return naver;
     } catch (e) {
-      console.warn('Naver search failed, falling back to Nominatim:', e);
+      console.warn('[place-search] Naver failed, falling through:', e);
     }
   }
 

@@ -452,6 +452,31 @@ export default {
       }
     }
 
+    // GET /kakao/search?query=... → Kakao Local Search by keyword
+    if (path === '/kakao/search') {
+      const query = url.searchParams.get('query');
+      if (!query) return json({ error: 'Missing query' }, 400);
+      if (!env.KAKAO_REST_API_KEY) return json({ error: 'KAKAO_REST_API_KEY not configured' }, 503);
+      try {
+        const kakaoUrl =
+          `https://dapi.kakao.com/v2/local/search/keyword.json` +
+          `?query=${encodeURIComponent(query)}&size=10`;
+        const kRes = await fetch(kakaoUrl, {
+          headers: {
+            Authorization: `KakaoAK ${env.KAKAO_REST_API_KEY}`,
+          },
+        });
+        if (!kRes.ok) {
+          const errText = await kRes.text();
+          return json({ error: `Kakao API ${kRes.status}`, detail: errText }, kRes.status);
+        }
+        const data = await kRes.json();
+        return json(data, 200, { 'Cache-Control': 'public, max-age=300' });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
     // GET /kakao/directions → Kakao Mobility 路線代理
     if (path === '/kakao/directions') {
       const start    = url.searchParams.get('start');   // "lng,lat"
