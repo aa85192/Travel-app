@@ -47,7 +47,7 @@ function PngOrSvg({ slug, size = 24, className, Fallback }: PngOrSvgProps) {
         width={size}
         height={size}
         className={className}
-        style={{ objectFit: 'contain', display: 'block' }}
+        style={{ objectFit: 'contain', display: 'block', mixBlendMode: 'multiply' }}
         draggable={false}
       />
     );
