@@ -521,7 +521,7 @@ export const SpotFormFields: React.FC<SpotFormFieldsProps> = ({ formData, setFor
             onChange={(ids) => setFormData({ ...formData, photoIds: ids })}
           />
           <p className="text-[10px] text-milk-tea-300 mt-1.5 ml-1">
-            照片只存在這台裝置，不會同步到雲端。
+            照片自動上傳到 Google Drive，旅伴打開行程也看得到。
           </p>
         </div>
 
