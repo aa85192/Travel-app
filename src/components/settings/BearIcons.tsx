@@ -1,8 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface BearIconProps {
   size?: number;
   className?: string;
+}
+
+// ─── Custom PNG support ─────────────────────────────────────────────
+// 把對應檔案放進 public/bears/{slug}.png 就會自動取代內建 SVG。
+// 不存在時 fallback 到原本的 SVG，不會閃破圖。
+const customBearCache = new Map<string, boolean>();
+
+function useCustomBear(slug: string): string | null {
+  const url = `${import.meta.env.BASE_URL}bears/${slug}.png`;
+  const cached = customBearCache.get(url);
+  const [exists, setExists] = useState<boolean | null>(cached ?? null);
+
+  useEffect(() => {
+    if (cached !== undefined) return;
+    const img = new Image();
+    img.onload = () => {
+      customBearCache.set(url, true);
+      setExists(true);
+    };
+    img.onerror = () => {
+      customBearCache.set(url, false);
+      setExists(false);
+    };
+    img.src = url;
+  }, [url, cached]);
+
+  return exists ? url : null;
 }
 
 // ─── shared face elements (32×32 viewBox) ───────────────────────────
@@ -62,7 +89,7 @@ export function BearHome({ size = 24, className }: BearIconProps) {
 }
 
 // ─── 行程 Bear — holding a tiny clipboard ───────────────────────────
-export function BearItinerary({ size = 24, className }: BearIconProps) {
+function BearItinerarySVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* Clipboard board */}
@@ -81,6 +108,24 @@ export function BearItinerary({ size = 24, className }: BearIconProps) {
       <Face />
     </svg>
   );
+}
+
+export function BearItinerary({ size = 24, className }: BearIconProps) {
+  const customUrl = useCustomBear('itinerary');
+  if (customUrl) {
+    return (
+      <img
+        src={customUrl}
+        alt=""
+        width={size}
+        height={size}
+        className={className}
+        style={{ objectFit: 'contain' }}
+        draggable={false}
+      />
+    );
+  }
+  return <BearItinerarySVG size={size} className={className} />;
 }
 
 // ─── 地圖 Bear — map pin floats above head ───────────────────────────
