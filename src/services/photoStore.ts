@@ -67,6 +67,13 @@ export async function getPhotoUrl(id: string): Promise<string | null> {
   return url;
 }
 
+/** Remove a Worker URL from the in-memory cache so the next render retries the network. */
+export function evictPhotoUrl(id: string): void {
+  const cached = urlCache.get(id);
+  if (cached && cached.startsWith('blob:')) URL.revokeObjectURL(cached);
+  urlCache.delete(id);
+}
+
 export async function deletePhoto(id: string): Promise<void> {
   const cached = urlCache.get(id);
   if (cached && cached.startsWith('blob:')) URL.revokeObjectURL(cached);

@@ -5,9 +5,10 @@ interface PhotoThumbnailProps {
   src: string;
   alt: string;
   size?: 'sm' | 'md' | 'lg';
+  onError?: () => void;
 }
 
-export const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ src, alt, size = 'md' }) => {
+export const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ src, alt, size = 'md', onError }) => {
   const [failed, setFailed] = useState(false);
   useEffect(() => { setFailed(false); }, [src]);
 
@@ -29,10 +30,10 @@ export const PhotoThumbnail: React.FC<PhotoThumbnailProps> = ({ src, alt, size =
           alt={alt}
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
-          loading="lazy"
           onError={() => {
             console.warn('[PhotoThumbnail] image failed to load:', src);
             setFailed(true);
+            onError?.();
           }}
         />
       )}

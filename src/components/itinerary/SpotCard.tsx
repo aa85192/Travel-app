@@ -184,6 +184,7 @@ const SpotTodoList: React.FC<SpotTodoListProps> = ({ spot, dayNumber }) => {
 export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayDate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [mainPhotoFailed, setMainPhotoFailed] = useState(false);
   const [dayWeather, setDayWeather] = useState<DayWeather | null>(null);
   const [weatherLoaded, setWeatherLoaded] = useState(false);
 
@@ -237,7 +238,18 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="relative">
-          <PhotoThumbnail src={spot.photo} alt={spot.name} size="md" />
+          {(!spot.photo || mainPhotoFailed) && spot.photoIds?.[0] ? (
+            <div className="w-16 h-16 rounded-photo overflow-hidden border-2 border-milk-tea-200 shadow-sm flex-shrink-0 bg-milk-tea-100">
+              <LocalPhoto photoId={spot.photoIds[0]} className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <PhotoThumbnail
+              src={spot.photo}
+              alt={spot.name}
+              size="md"
+              onError={() => setMainPhotoFailed(true)}
+            />
+          )}
           <div
             className="absolute -top-2 -left-2 w-7 h-7 text-white rounded-full flex items-center justify-center text-xs font-bold border-2 border-milk-tea-50 shadow-sm"
             style={{ backgroundColor: BADGE_COLORS[index % BADGE_COLORS.length] }}

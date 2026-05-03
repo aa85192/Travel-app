@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
-import { getPhotoUrl } from '../../services/photoStore';
+import { getPhotoUrl, evictPhotoUrl } from '../../services/photoStore';
 
 interface LocalPhotoProps {
   photoId: string;
@@ -46,6 +46,7 @@ export const LocalPhoto: React.FC<LocalPhotoProps> = ({ photoId, alt, className 
       referrerPolicy="no-referrer"
       onError={() => {
         console.warn('[LocalPhoto] failed to load:', photoId, url);
+        evictPhotoUrl(photoId);
         setFailed(true);
       }}
     />

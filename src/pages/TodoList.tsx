@@ -6,6 +6,7 @@ import {
 import { useTripStore } from '../stores/tripStore';
 import { Spot, TodoItem } from '../types';
 import { PhotoThumbnail } from '../components/common/PhotoThumbnail';
+import { LocalPhoto } from '../components/common/LocalPhoto';
 
 interface TodoListProps {
   onBack: () => void;
@@ -400,12 +401,19 @@ const DaySection: React.FC<{
 );
 
 const SpotGroup: React.FC<{ spot: Spot; children: React.ReactNode }> = ({ spot, children }) => {
+  const [mainPhotoFailed, setMainPhotoFailed] = useState(false);
   const total = spot.todos?.length ?? 0;
   const done = (spot.todos ?? []).filter((t) => t.done).length;
   return (
     <div className="bg-milk-tea-50/60 rounded-2xl p-2.5 border border-milk-tea-100">
       <div className="flex items-center mb-1.5">
-        <PhotoThumbnail src={spot.photo} alt={spot.name} size="sm" />
+        {(!spot.photo || mainPhotoFailed) && spot.photoIds?.[0] ? (
+          <div className="w-12 h-12 rounded-photo overflow-hidden border-2 border-milk-tea-200 shadow-sm flex-shrink-0 bg-milk-tea-100">
+            <LocalPhoto photoId={spot.photoIds[0]} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <PhotoThumbnail src={spot.photo} alt={spot.name} size="sm" onError={() => setMainPhotoFailed(true)} />
+        )}
         <div className="ml-2.5 flex-1 min-w-0">
           <p className="text-xs font-extrabold text-milk-tea-900 truncate font-display">{spot.name}</p>
           <p className="text-[9px] text-milk-tea-400 font-mono">{done}/{total} 完成</p>
