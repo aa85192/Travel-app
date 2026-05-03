@@ -11,7 +11,7 @@ interface BearIconProps {
 const customBearCache = new Map<string, boolean>();
 
 function useCustomBear(slug: string): string | null {
-  const url = `${import.meta.env.BASE_URL}bears/${slug}.png`;
+  const url = `${import.meta.env.BASE_URL}bears/${encodeURIComponent(slug)}.png`;
   const cached = customBearCache.get(url);
   const [exists, setExists] = useState<boolean | null>(cached ?? null);
 
@@ -30,6 +30,29 @@ function useCustomBear(slug: string): string | null {
   }, [url, cached]);
 
   return exists ? url : null;
+}
+
+interface PngOrSvgProps extends BearIconProps {
+  slug: string;
+  Fallback: React.FC<BearIconProps>;
+}
+
+function PngOrSvg({ slug, size = 24, className, Fallback }: PngOrSvgProps) {
+  const url = useCustomBear(slug);
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt=""
+        width={size}
+        height={size}
+        className={className}
+        style={{ objectFit: 'contain', display: 'block' }}
+        draggable={false}
+      />
+    );
+  }
+  return <Fallback size={size} className={className} />;
 }
 
 // ─── shared face elements (32×32 viewBox) ───────────────────────────
@@ -69,7 +92,7 @@ function Face() {
 }
 
 // ─── 首頁 Bear — wearing a tiny house as a hat ───────────────────────
-export function BearHome({ size = 24, className }: BearIconProps) {
+function BearHomeSVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* House hat — sits between/above ears */}
@@ -86,6 +109,10 @@ export function BearHome({ size = 24, className }: BearIconProps) {
       <Face />
     </svg>
   );
+}
+
+export function BearHome(props: BearIconProps) {
+  return <PngOrSvg slug="首頁" Fallback={BearHomeSVG} {...props} />;
 }
 
 // ─── 行程 Bear — holding a tiny clipboard ───────────────────────────
@@ -110,26 +137,12 @@ function BearItinerarySVG({ size = 24, className }: BearIconProps) {
   );
 }
 
-export function BearItinerary({ size = 24, className }: BearIconProps) {
-  const customUrl = useCustomBear('itinerary');
-  if (customUrl) {
-    return (
-      <img
-        src={customUrl}
-        alt=""
-        width={size}
-        height={size}
-        className={className}
-        style={{ objectFit: 'contain' }}
-        draggable={false}
-      />
-    );
-  }
-  return <BearItinerarySVG size={size} className={className} />;
+export function BearItinerary(props: BearIconProps) {
+  return <PngOrSvg slug="行程" Fallback={BearItinerarySVG} {...props} />;
 }
 
 // ─── 地圖 Bear — map pin floats above head ───────────────────────────
-export function BearMap({ size = 24, className }: BearIconProps) {
+function BearMapSVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* Map pin body (teardrop) — drawn before face so head overlaps base */}
@@ -144,8 +157,12 @@ export function BearMap({ size = 24, className }: BearIconProps) {
   );
 }
 
+export function BearMap(props: BearIconProps) {
+  return <PngOrSvg slug="MAP" Fallback={BearMapSVG} {...props} />;
+}
+
 // ─── 預算 Bear — gold coin above head ───────────────────────────────
-export function BearBudget({ size = 24, className }: BearIconProps) {
+function BearBudgetSVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* Coin */}
@@ -165,8 +182,12 @@ export function BearBudget({ size = 24, className }: BearIconProps) {
   );
 }
 
+export function BearBudget(props: BearIconProps) {
+  return <PngOrSvg slug="COST" Fallback={BearBudgetSVG} {...props} />;
+}
+
 // ─── 待辦 Bear — holding a tiny checklist note ──────────────────────
-export function BearTodo({ size = 24, className }: BearIconProps) {
+function BearTodoSVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* Note paper */}
@@ -186,8 +207,12 @@ export function BearTodo({ size = 24, className }: BearIconProps) {
   );
 }
 
+export function BearTodo(props: BearIconProps) {
+  return <PngOrSvg slug="LIST" Fallback={BearTodoSVG} {...props} />;
+}
+
 // ─── 設定 Bear — wearing a little gear crown ────────────────────────
-export function BearSettings({ size = 24, className }: BearIconProps) {
+function BearSettingsSVG({ size = 24, className }: BearIconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" className={className}>
       {/* Gear — centre circle + 6 teeth via clip */}
@@ -217,4 +242,8 @@ export function BearSettings({ size = 24, className }: BearIconProps) {
       <Face />
     </svg>
   );
+}
+
+export function BearSettings(props: BearIconProps) {
+  return <PngOrSvg slug="SETTING" Fallback={BearSettingsSVG} {...props} />;
 }
