@@ -54,8 +54,14 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     throw new Error('GEMINI_API_KEY 未設定，請確認 GitHub Secrets 有加入此變數');
   }
 
-  // 精簡 prompt：用知識庫找真實景點，含容錯，k=韓文官方名, z=繁中名
-  const prompt = `韓國旅遊知識:輸入「${query}」(含錯字)→依記憶找≤5個真實存在的韓國景點/餐廳/咖啡廳/店家→JSON:[{"k":"韓文官方名","z":"繁中名"}],純JSON`;
+  // Grounded search: 接 Google Search 抓真實結果，避免 model 用陳舊記憶
+  const prompt =
+    `找與「${query}」最相關的 1-5 個真實韓國地點（含地鐵站、景點、餐廳、咖啡廳、商店）。\n` +
+    `規則：\n` +
+    `1. 若 query 本身就是某個地點（例：「南浦車站」=「남포역」），第一筆必須是它本身\n` +
+    `2. 其餘按相關 / 鄰近度排序\n` +
+    `3. 只回純 JSON 陣列，不要任何說明、不要 markdown 圍欄\n` +
+    `格式：[{"k":"韓文官方名","z":"繁中名"}]`;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const res = await fetch(
@@ -68,6 +74,11 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: {
+            thinkingConfig: { thinkingBudget: 0 },
+            temperature: 0.2,
+          },
         }),
       }
     );
@@ -96,17 +107,23 @@ export async function searchSpotsWithGemini(query: string): Promise<GeminiSpotRe
     }
 
     const data = await res.json();
-    const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+    // grounded responses can split JSON across multiple parts — concat them all
+    const parts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.map((p) => p?.text ?? '').join('').trim();
     if (!text) throw new Error('Gemini 回傳空內容');
 
-    // 清除 markdown code block
-    const clean = text.replace(/```json?\n?/gi, '').replace(/```/g, '').trim();
+    // grounded responses sometimes wrap JSON in prose / markdown — pull out
+    // the first top-level array literal.
+    const arrayMatch = text.match(/\[[\s\S]*\]/);
+    const candidate = arrayMatch
+      ? arrayMatch[0]
+      : text.replace(/```json?\n?/gi, '').replace(/```/g, '').trim();
 
     let parsed: any;
     try {
-      parsed = JSON.parse(clean);
+      parsed = JSON.parse(candidate);
     } catch {
-      throw new Error(`JSON 解析失敗：${clean.slice(0, 100)}`);
+      throw new Error(`JSON 解析失敗：${candidate.slice(0, 120)}`);
     }
 
     if (!Array.isArray(parsed)) throw new Error('回傳格式不是陣列');
