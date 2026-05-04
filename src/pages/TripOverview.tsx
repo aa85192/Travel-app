@@ -92,7 +92,7 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-milk-tea-50 pb-32">
+    <div className="bg-milk-tea-50 pb-8">
       <ReorderModeBanner />
 
       {/* Header */}
@@ -107,7 +107,10 @@ export const TripOverview: React.FC<TripOverviewProps> = ({ onBack }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-milk-tea-900/80 via-milk-tea-900/20 to-transparent" />
         </div>
 
-        <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-10">
+        <div
+          className="absolute left-6 right-6 flex justify-between items-center z-10"
+          style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
+        >
           <button
             onClick={onBack}
             className="p-2 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/30 transition-all"

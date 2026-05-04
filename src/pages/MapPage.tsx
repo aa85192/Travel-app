@@ -323,7 +323,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
 
   if (!req) {
     return (
-      <div className="flex flex-col h-screen bg-white">
+      <div className="flex flex-col h-full bg-white">
         {/* 標題列 */}
         <div className="bg-white border-b border-milk-tea-100 z-20 flex-shrink-0">
           <div className="flex items-center px-4 py-3">
@@ -428,7 +428,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
   const modeColor = MODE_COLOR[mode] ?? '#3DBDAD';
 
   return (
-    <div className="flex flex-col h-screen bg-milk-tea-50">
+    <div className="flex flex-col h-full bg-milk-tea-50">
       {/* 頂部標題列 */}
       <div className="flex items-center px-4 py-3 bg-white border-b border-milk-tea-200 z-10 flex-shrink-0">
         <button onClick={onBack} className="mr-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-milk-tea-100 transition-colors">
@@ -476,7 +476,6 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
         initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         className="bg-white rounded-t-2xl shadow-xl border-t border-milk-tea-100 px-4 pt-4 pb-safe flex-shrink-0"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 80px)' }}
       >
         {/* 路線統計 */}
         {IS_TRANSIT(mode) ? (

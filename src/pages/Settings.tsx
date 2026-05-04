@@ -261,9 +261,12 @@ export function Settings() {
   const rate = exchangeRates[travelCurrency] ?? current.ratePerTWD;
 
   return (
-    <div className="min-h-screen bg-milk-tea-50 pb-28">
+    <div className="bg-milk-tea-50 pb-8">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-milk-tea-50/90 backdrop-blur-md border-b border-milk-tea-100 px-5 pt-12 pb-4">
+      <div
+        className="sticky top-0 z-10 bg-milk-tea-50/90 backdrop-blur-md border-b border-milk-tea-100 px-5 pb-4"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 3rem)' }}
+      >
         <h1 className="text-2xl font-bold text-milk-tea-900">設定</h1>
         <p className="text-xs text-milk-tea-400 mt-0.5">個人化你的旅遊應用體驗</p>
       </div>
