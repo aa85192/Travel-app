@@ -2,7 +2,7 @@
  * Photo lookup service
  *
  * Strategy (cheapest → broadest coverage):
- *   1. Naver Image Search  — via Worker proxy (best for KR restaurants / cafes / shops)
+ *   1. Naver Image Search  — via corsproxy.io (best for KR restaurants / cafes / shops)
  *   2. Wikipedia REST page summary  — ko / en, exact title
  *   3. Wikipedia MediaWiki search   — ko / en, keyword search
  */
@@ -57,16 +57,24 @@ async function searchAndPickThumb(query: string, lang: 'ko' | 'en'): Promise<str
   }
 }
 
-// ── Naver Image Search（透過 Worker 代理，憑證在 server-side）────────────────
+// ── Naver Image Search ───────────────────────────────────────────────────────
 
-const WORKER_URL = 'https://visa-rate.aa85192.workers.dev';
+const NAVER_CLIENT_ID     = (import.meta.env.VITE_NAVER_CLIENT_ID     as string | undefined) ?? '';
+const NAVER_CLIENT_SECRET = (import.meta.env.VITE_NAVER_CLIENT_SECRET as string | undefined) ?? '';
 
 async function fetchNaverPhoto(query: string): Promise<string | null> {
+  if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) return null;
   try {
-    const res = await fetch(
-      `${WORKER_URL}/naver/image?q=${encodeURIComponent(query)}`,
-      { signal: AbortSignal.timeout(6000) },
-    );
+    const apiUrl = `https://openapi.naver.com/v1/search/image.json?` +
+      new URLSearchParams({ query, display: '5', sort: 'sim', filter: 'all' });
+    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
+    const res = await fetch(proxyUrl, {
+      headers: {
+        'X-Naver-Client-Id':     NAVER_CLIENT_ID,
+        'X-Naver-Client-Secret': NAVER_CLIENT_SECRET,
+      },
+      signal: AbortSignal.timeout(6000),
+    });
     if (!res.ok) return null;
     const data = await res.json();
     for (const item of (data?.items ?? [])) {
