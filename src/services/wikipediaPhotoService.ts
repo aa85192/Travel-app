@@ -102,7 +102,13 @@ export async function fetchWikipediaPhoto(
   const candidates = [query, fallbackQuery].filter((q): q is string => !!q && q.trim().length > 0);
   const langs: ('ko' | 'en')[] = ['ko', 'en'];
 
-  // Phase 1: Wikipedia page summary (exact title match)
+  // Phase 1: Naver Image Search (Korean restaurants / cafes / shops — highest hit rate for KR)
+  for (const term of candidates) {
+    const url = await fetchNaverPhoto(term);
+    if (url) return url;
+  }
+
+  // Phase 2: Wikipedia page summary (exact title match)
   for (const term of candidates) {
     for (const lang of langs) {
       const url = await fetchPageSummaryThumb(term, lang);
@@ -110,18 +116,12 @@ export async function fetchWikipediaPhoto(
     }
   }
 
-  // Phase 2: Wikipedia full-text search
+  // Phase 3: Wikipedia full-text search
   for (const term of candidates) {
     for (const lang of langs) {
       const url = await searchAndPickThumb(term, lang);
       if (url) return url;
     }
-  }
-
-  // Phase 3: Naver Image Search (Korean restaurants / cafes / shops)
-  for (const term of candidates) {
-    const url = await fetchNaverPhoto(term);
-    if (url) return url;
   }
 
   return null;
