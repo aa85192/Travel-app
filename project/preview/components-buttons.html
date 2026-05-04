@@ -1,0 +1,34 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+html,body{margin:0;background:var(--bg-app);font-family:var(--font-body);}
+.wrap{padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+.label{font-size:11px;color:var(--fg-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.btn{padding:10px 18px;border:none;border-radius:14px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+.primary{background:var(--color-milk-tea-500);color:#fff;}
+.secondary{background:var(--color-milk-tea-100);color:var(--color-milk-tea-500);}
+.ghost{background:transparent;color:var(--color-milk-tea-500);}
+.icon{width:36px;height:36px;border-radius:9999px;background:#fff;border:1px solid var(--color-milk-tea-100);display:inline-flex;align-items:center;justify-content:center;color:var(--color-milk-tea-500);font-size:14px;cursor:pointer;}
+.dashed{padding:10px 18px;border:2px dashed var(--color-milk-tea-200);background:var(--color-milk-tea-50);border-radius:18px;color:var(--color-milk-tea-400);font-size:12px;font-weight:700;}
+</style></head>
+<body><div class="wrap">
+  <div>
+    <div class="label" style="margin-bottom:10px">buttons · primary / secondary / ghost / icon</div>
+    <div class="row">
+      <button class="btn primary">儲存</button>
+      <button class="btn secondary">取消</button>
+      <button class="btn ghost">明細 ›</button>
+      <button class="icon">⬇</button>
+      <button class="icon">⬆</button>
+      <button class="icon">⚙</button>
+    </div>
+  </div>
+  <div>
+    <div class="label" style="margin-bottom:10px">empty / add-new · dashed border</div>
+    <div class="row">
+      <button class="dashed">＋ 新增分類</button>
+      <button class="dashed">＋ 新增連結</button>
+    </div>
+  </div>
+</div></body></html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+html,body{margin:0;background:var(--bg-app);font-family:var(--font-body);}
+.wrap{padding:18px 24px;}
+.label{font-size:11px;color:var(--fg-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;}
+.nav{background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid var(--color-milk-tea-100);border-radius:18px 18px 0 0;display:flex;justify-content:space-around;padding:10px 6px 14px;box-shadow:0 -2px 20px rgba(255,111,163,.06);}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px;}
+.tab img{width:28px;height:28px;display:block;mix-blend-mode:multiply;filter:saturate(0) opacity(.5);}
+.tab.active img{filter:none;transform:translateY(-3px) scale(1.18);}
+.tab span{font-size:10px;font-weight:700;color:var(--color-milk-tea-300);}
+.tab.active span{color:var(--color-milk-tea-500);}
+.dot{width:4px;height:4px;border-radius:50%;background:transparent;margin-top:2px;}
+.tab.active .dot{background:var(--color-milk-tea-400);}
+</style></head>
+<body><div class="wrap">
+  <div class="label">bottom nav · 6 bear tabs · active = scale 1.18 + lift</div>
+  <div class="nav">
+    <div class="tab"><img src="../assets/bear-icons/home.png"><span>首頁</span><div class="dot"></div></div>
+    <div class="tab active"><img src="../assets/bear-icons/itinerary.png"><span>行程</span><div class="dot"></div></div>
+    <div class="tab"><img src="../assets/bear-icons/LIST.png"><span>待辦</span><div class="dot"></div></div>
+    <div class="tab"><img src="../assets/bear-icons/MAP.png"><span>地圖</span><div class="dot"></div></div>
+    <div class="tab"><img src="../assets/bear-icons/COST.png"><span>預算</span><div class="dot"></div></div>
+    <div class="tab"><img src="../assets/bear-icons/SETTING.png"><span>設定</span><div class="dot"></div></div>
+  </div>
+</div></body></html>

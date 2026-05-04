@@ -1,0 +1,37 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+html,body{margin:0;background:var(--bg-app);font-family:var(--font-body);}
+.wrap{padding:20px 24px;display:flex;flex-direction:column;gap:14px;}
+.label{font-size:11px;color:var(--fg-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:9999px;font-size:12px;font-weight:700;}
+.p-a{background:var(--color-milk-tea-500);color:#fff;}
+.p-b{background:#fff;color:var(--color-milk-tea-500);border:1px solid var(--color-milk-tea-200);}
+.p-c{background:var(--color-milk-tea-50);color:var(--color-milk-tea-500);}
+.p-d{background:rgba(255,255,255,.18);color:#fff;backdrop-filter:blur(8px);}
+.dark{background:#FF6FA3;padding:8px;border-radius:14px;display:inline-flex;}
+.tag{padding:4px 10px;border-radius:9999px;font-size:10px;font-weight:700;color:#5A4452;}
+</style></head>
+<body><div class="wrap">
+  <div>
+    <div class="label" style="margin-bottom:8px">pills · primary / outline / soft</div>
+    <div class="row">
+      <span class="pill p-a">✈️ 航班資訊</span>
+      <span class="pill p-b">💰 已花費用</span>
+      <span class="pill p-c">收到!</span>
+      <div class="dark"><span class="pill p-d">📍 Seoul, Korea</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="label" style="margin-bottom:8px">category tags · pastel accents</div>
+    <div class="row">
+      <span class="tag" style="background:#FFD4B8">☕ 咖啡廳</span>
+      <span class="tag" style="background:#AAB6FB">🍜 餐廳</span>
+      <span class="tag" style="background:#99F2E6">🗺️ 景點</span>
+      <span class="tag" style="background:#B8DCFF">🏨 住宿</span>
+      <span class="tag" style="background:#C5B8FF">🛍️ 購物</span>
+      <span class="tag" style="background:#FFE4A0">🎡 活動</span>
+    </div>
+  </div>
+</div></body></html>

@@ -1,0 +1,23 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+html,body{margin:0;background:var(--bg-app);font-family:var(--font-body);}
+.wrap{padding:20px 24px;display:flex;flex-direction:column;gap:10px;}
+.label{font-size:11px;color:var(--fg-3);font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+.field{background:var(--color-milk-tea-50);border:1px solid var(--color-milk-tea-100);border-radius:14px;padding:10px 14px;font-family:inherit;font-size:13px;color:var(--fg-2);}
+.field::placeholder{color:var(--color-milk-tea-300);}
+.field.mono{font-family:var(--font-mono);font-size:12px;}
+.field.focus{border-color:var(--color-milk-tea-400);background:#fff;box-shadow:0 0 0 3px rgba(255,143,175,.18);}
+.row{display:flex;gap:8px;}
+.emoji{width:42px;text-align:center;font-size:18px;}
+</style></head>
+<body><div class="wrap">
+  <div class="label">inputs · soft pink fill, focus glow</div>
+  <input class="field" placeholder="分類名稱（例：弘大美食）">
+  <input class="field focus" value="景福宮">
+  <input class="field mono" placeholder="貼上 IG / 小紅書 / Threads 連結">
+  <div class="row">
+    <input class="field emoji" value="📌">
+    <input class="field" style="flex:1" placeholder="分類名稱" value="弘大美食">
+  </div>
+</div></body></html>

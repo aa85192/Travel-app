@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+html,body{margin:0;background:var(--bg-app);font-family:var(--font-body);}
+.wrap{padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.card{background:#fff;border:1px solid var(--border-card);border-radius:24px;padding:16px;box-shadow:0 2px 20px rgba(0,0,0,.06);}
+.title{font-family:var(--font-display);font-weight:800;font-size:14px;color:var(--fg-1);}
+.meta{font-size:10px;color:var(--fg-3);margin-top:4px;}
+.flight{padding:14px 16px;}
+.flight .top{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-soft);padding-bottom:8px;margin-bottom:10px;}
+.flight .codes{display:flex;justify-content:space-between;align-items:center;}
+.flight .time{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--fg-1);line-height:1;}
+.flight .code{font-family:var(--font-mono);font-size:13px;font-weight:700;color:#5A4452;margin-top:4px;}
+.flight .arrow{flex:1;display:flex;align-items:center;justify-content:center;color:var(--color-milk-tea-300);font-size:12px;}
+.tear{display:flex;align-items:center;margin-top:10px;}
+.tear .dot{width:14px;height:14px;border-radius:9999px;background:var(--color-milk-tea-50);margin:0 -7px;}
+.tear .line{flex:1;border-top:1.5px dashed var(--color-milk-tea-200);}
+.spot{position:relative;padding:0;overflow:hidden;height:120px;background:linear-gradient(135deg,#FFD4B8,#FFACBB);}
+.spot .ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6),transparent);}
+.spot .info{position:absolute;left:14px;right:14px;bottom:12px;color:#fff;}
+.spot .name{font-weight:800;font-size:14px;}
+.spot .ko{font-size:10px;opacity:.8;}
+.chip{display:inline-block;padding:3px 10px;border-radius:9999px;background:rgba(255,255,255,.22);backdrop-filter:blur(8px);font-size:9px;font-weight:700;}
+</style></head>
+<body><div class="wrap">
+  <div class="card flight">
+    <div class="top">
+      <div class="title">✈️ Air Busan <span style="font-family:var(--font-mono);font-size:9px;color:var(--fg-3);font-weight:500;">BX796</span></div>
+      <span class="chip" style="background:#FFF8FA;color:var(--color-milk-tea-500);">去程</span>
+    </div>
+    <div class="codes">
+      <div><div class="time">14:15</div><div class="code">KHH</div></div>
+      <div class="arrow">— ✈ —</div>
+      <div style="text-align:right"><div class="time">17:55</div><div class="code">PUS</div></div>
+    </div>
+    <div class="tear"><div class="dot"></div><div class="line"></div><div class="dot"></div></div>
+  </div>
+
+  <div class="card spot">
+    <div style="background:#FFD4B8;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:46px;">🏯</div>
+    <div class="ov"></div>
+    <div class="info">
+      <span class="chip">🗺️ 景點</span>
+      <div class="name" style="margin-top:4px;">景福宮</div>
+      <div class="ko">경복궁 · 09:00–18:00</div>
+    </div>
+  </div>
+</div></body></html>

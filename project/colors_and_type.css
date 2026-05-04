@@ -1,0 +1,216 @@
+/* ============================================================
+   Cindy's World — Korea Travel App
+   Design Tokens: Colors + Type
+   ============================================================
+   Source of truth: github.com/aa85192/Travel-app · src/index.css
+   Applied via Tailwind v4 @theme tokens. Mirrored here as raw
+   CSS variables so any HTML can import this file directly.
+
+   Visual DNA
+   - 馬卡龍粉 (macaron pink) primary: warm, sweet, not childish
+   - Accent palette inspired by Korean stationery / 文具
+   - Apple-Wallet-style cards: soft shadow, generous radius
+   - Type combo: Nunito (display, rounded sans) + Noto Sans TC
+     (body, traditional Chinese) + DM Mono (numerics)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ───── Core macaron pink (primary brand scale) ───── */
+  --color-milk-tea-50:  #FFF8FA;
+  --color-milk-tea-100: #FED7DD;
+  --color-milk-tea-200: #FFBFCA;
+  --color-milk-tea-300: #FFACBB;
+  --color-milk-tea-400: #FF8FAF;
+  --color-milk-tea-500: #FF6FA3;  /* primary action */
+  --color-milk-tea-600: #E8538C;
+  --color-milk-tea-700: #C23E73;
+  --color-milk-tea-800: #9C2B58;
+  --color-milk-tea-900: #6B1A3C;  /* deepest text */
+
+  /* ───── Macaron accents (pastel, low-saturation) ───── */
+  --color-accent-coral:   #FFD4B8;  /* peach — cafés, warm tags */
+  --color-accent-pink:    #AAB6FB;  /* periwinkle — restaurants, info */
+  --color-accent-cream:   #FFFEE1;  /* butter — taxis, highlight */
+  --color-accent-sage:    #99F2E6;  /* mint — walking, attractions */
+  --color-accent-sky:     #B8DCFF;  /* baby blue — hotels */
+  --color-accent-warning: #FFE4A0;  /* honey — activities, warning */
+  --color-accent-error:   #FFB3BA;  /* coral pink — error */
+  --color-accent-lilac:   #C5B8FF;  /* lavender — subway, shopping */
+
+  /* ───── Neutrals (warm-tinted, not pure gray) ───── */
+  --color-neutral-white:  #FFFAFC;
+  --color-neutral-gray-1: #F5EDEF;
+  --color-neutral-gray-2: #E0D0D5;
+  --color-neutral-gray-3: #ADA0A5;
+  --color-neutral-dark:   #2D2030;
+
+  /* ───── Transport color codes ───── */
+  --color-transport-walk:    #99F2E6;
+  --color-transport-bus:     #AAB6FB;
+  --color-transport-subway:  #C5B8FF;
+  --color-transport-taxi:    #FFFEE1;
+  --color-transport-uber:    #2D2030;
+
+  /* ───── Semantic surfaces ───── */
+  --bg-app:        var(--color-milk-tea-50);
+  --bg-card:       #FFFFFF;
+  --bg-card-soft:  var(--color-milk-tea-50);
+  --bg-pill:       var(--color-neutral-white);
+  --bg-active:     var(--color-milk-tea-500);
+
+  --fg-1: var(--color-milk-tea-900);          /* heading */
+  --fg-2: #5A4452;                            /* body strong */
+  --fg-3: var(--color-neutral-gray-3);        /* meta / hint */
+  --fg-on-primary: #FFFFFF;
+  --fg-link: var(--color-milk-tea-500);
+
+  --border-soft: var(--color-milk-tea-100);
+  --border-card: var(--color-milk-tea-100);
+  --border-input: var(--color-milk-tea-100);
+
+  /* ───── Type system ───── */
+  --font-display: "Nunito", "Noto Sans TC", system-ui, sans-serif;
+  --font-body:    "Noto Sans TC", "Nunito", system-ui, sans-serif;
+  --font-mono:    "DM Mono", ui-monospace, monospace;
+
+  --fw-light:     300;
+  --fw-regular:   400;
+  --fw-medium:    500;
+  --fw-bold:      700;
+  --fw-extra:     800;
+  --fw-black:     900;
+
+  /* ───── Type scale (mobile-first; 16px base) ───── */
+  --fs-9:  9px;       /* micro mono labels */
+  --fs-10: 10px;      /* tag / hint */
+  --fs-11: 11px;      /* small label */
+  --fs-12: 12px;      /* meta */
+  --fs-xs: 12px;
+  --fs-sm: 14px;      /* body small */
+  --fs-base: 16px;    /* body */
+  --fs-lg: 18px;
+  --fs-xl: 20px;      /* h3 */
+  --fs-2xl: 24px;     /* h2 */
+  --fs-3xl: 30px;     /* hero numerics (eg 14:15) */
+  --fs-4xl: 36px;
+  --fs-display: 28px;
+
+  --lh-tight: 1.05;
+  --lh-snug: 1.2;
+  --lh-normal: 1.5;
+  --lh-loose: 1.7;
+
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+
+  /* ───── Radii ───── */
+  --radius-xs:    6px;
+  --radius-sm:   10px;
+  --radius-md:   14px;
+  --radius-photo: 14px;     /* spec'd in source */
+  --radius-lg:   18px;
+  --radius-xl:   24px;
+  --radius-2xl:  28px;
+  --radius-3xl:  32px;      /* hero cards */
+  --radius-pill: 9999px;
+
+  /* ───── Spacing (4px grid) ───── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* ───── Shadows (soft, peachy, low-z) ───── */
+  --shadow-xs: 0 1px 2px rgba(255, 111, 163, 0.04);
+  --shadow-sm: 0 2px 8px rgba(255, 111, 163, 0.06);
+  --shadow-md: 0 2px 20px rgba(0, 0, 0, 0.06);     /* Apple-Wallet style */
+  --shadow-lg: 0 8px 32px rgba(255, 111, 163, 0.12);
+  --shadow-glow: 0 0 20px rgba(255, 172, 187, 0.30);
+
+  /* ───── Easing (motion/react springy) ───── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring-stiff: 420;     /* spring stiffness used in BottomNav */
+  --ease-spring-damp:  22;      /* spring damping */
+
+  /* ───── Backdrop ───── */
+  --blur-md: 12px;
+  --blur-lg: 24px;
+}
+
+/* ───── Semantic typography ───── */
+.h1, h1 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-extra);
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-1);
+}
+.h2, h2 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-extra);
+  font-size: var(--fs-xl);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+}
+.h3, h3 {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--fg-1);
+}
+.body, p {
+  font-family: var(--font-body);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-2);
+}
+.meta {
+  font-family: var(--font-body);
+  font-size: var(--fs-10);
+  color: var(--fg-3);
+  font-weight: var(--fw-medium);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.label {
+  font-family: var(--font-body);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-11);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* ───── Component-level reusable ───── */
+.cw-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+}
+.cw-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-11);
+  font-weight: var(--fw-bold);
+  background: var(--color-milk-tea-50);
+  color: var(--color-milk-tea-500);
+  border: 1px solid var(--border-soft);
+}
+.cw-pill[data-active="true"] {
+  background: var(--bg-active);
+  color: var(--fg-on-primary);
+  border-color: transparent;
+}
