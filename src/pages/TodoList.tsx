@@ -162,9 +162,12 @@ export const TodoList: React.FC<TodoListProps> = ({ onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-milk-tea-50 pb-32">
+    <div className="bg-milk-tea-50 pb-8">
       {/* Header */}
-      <header className="px-6 pt-10 pb-4 flex items-center space-x-3">
+      <header
+        className="px-6 pb-4 flex items-center space-x-3"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2.5rem)' }}
+      >
         <button
           onClick={onBack}
           className="w-9 h-9 bg-white rounded-full shadow-sm flex items-center justify-center border border-milk-tea-100 text-milk-tea-500"

@@ -68,6 +68,18 @@
 }
 
 @layer base {
+  /* iOS PWA / Safari: lock the page viewport so internal scroll doesn't
+     interact with the URL-bar collapse and rubber-band overscroll, which
+     was causing the bottom nav to visibly drift on the itinerary page. */
+  html, body, #root {
+    height: 100%;
+    height: 100dvh;
+  }
+  html, body {
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
   body {
     @apply bg-milk-tea-50 text-neutral-dark font-body;
   }
@@ -82,5 +94,21 @@
   }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  /* Internal scroll container: keeps momentum scrolling smooth on iOS
+     while preventing rubber-band from leaking to the document. */
+  .scroll-area {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
   }
 }

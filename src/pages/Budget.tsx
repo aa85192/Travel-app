@@ -174,8 +174,11 @@ export const Budget: React.FC<BudgetProps> = ({ trip, onUpdateTrip }) => {
   const settlements = calculateSettlement(calculateBalances());
 
   return (
-    <div className="pb-24 min-h-screen bg-milk-tea-50">
-      <header className="px-6 pt-8 pb-4">
+    <div className="pb-8 bg-milk-tea-50">
+      <header
+        className="px-6 pb-4"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2rem)' }}
+      >
         <h1 className="text-2xl font-extrabold">記帳</h1>
 
         {/* 共用 / 私人 切換（只在支出記錄頁顯示） */}

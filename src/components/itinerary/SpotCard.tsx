@@ -227,10 +227,10 @@ export const SpotCard: React.FC<SpotCardProps> = ({ spot, dayNumber, index, dayD
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
+      // 漸進顯示但延遲封頂在 5 張卡 (250ms)，避免長 day 末張要等超過 1 秒
+      transition={{ duration: 0.25, delay: Math.min(index, 5) * 0.05 }}
       className="bg-white rounded-3xl shadow-sm border border-milk-tea-100 hover:shadow-md transition-all"
     >
       <div

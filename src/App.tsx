@@ -45,90 +45,99 @@ export default function App() {
   }
 
   return (
-    <div className="max-w-md mx-auto bg-milk-tea-50 min-h-screen shadow-2xl relative overflow-hidden font-sans selection:bg-milk-tea-200 selection:text-milk-tea-900">
-      <AnimatePresence mode="wait">
-        {activeTab === 'home' && (
-          <motion.div
-            key="home"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Home trip={trip} onUpdateTrip={setTrip} onNavigate={setActiveTab} />
-          </motion.div>
-        )}
-        {activeTab === 'itinerary' && (
-          <motion.div
-            key="itinerary"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <TripOverview onBack={() => setActiveTab('home')} />
-          </motion.div>
-        )}
-        {activeTab === 'todo' && (
-          <motion.div
-            key="todo"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <TodoList onBack={() => setActiveTab('home')} />
-          </motion.div>
-        )}
-        {activeTab === 'budget' && (
-          <motion.div
-            key="budget"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Budget trip={trip} onUpdateTrip={setTrip} onBack={() => setActiveTab('home')} />
-          </motion.div>
-        )}
-        {activeTab === 'map' && (
-          <motion.div
-            key="map"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.25 }}
-            className="h-screen"
-          >
-            <MapPage onBack={() => setActiveTab('itinerary')} />
-          </motion.div>
-        )}
-        {activeTab === 'settings' && (
-          <motion.div
-            key="settings"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Settings />
-          </motion.div>
-        )}
-      </AnimatePresence>
+    // 外殼：固定佔滿 dvh，內部 flex 直向；只有 .scroll-area 會卷動。
+    // 這樣 BottomNav 就不再依賴 viewport `position: fixed`，
+    // 在 iOS 把網頁加到主畫面時也不會因為 rubber-band 而跳動。
+    <div className="fixed inset-0 max-w-md mx-auto bg-milk-tea-50 shadow-2xl flex flex-col font-sans selection:bg-milk-tea-200 selection:text-milk-tea-900">
+      <main className="scroll-area flex-1 relative">
+        <AnimatePresence mode="wait">
+          {activeTab === 'home' && (
+            <motion.div
+              key="home"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Home trip={trip} onUpdateTrip={setTrip} onNavigate={setActiveTab} />
+            </motion.div>
+          )}
+          {activeTab === 'itinerary' && (
+            <motion.div
+              key="itinerary"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TripOverview onBack={() => setActiveTab('home')} />
+            </motion.div>
+          )}
+          {activeTab === 'todo' && (
+            <motion.div
+              key="todo"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TodoList onBack={() => setActiveTab('home')} />
+            </motion.div>
+          )}
+          {activeTab === 'budget' && (
+            <motion.div
+              key="budget"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Budget trip={trip} onUpdateTrip={setTrip} onBack={() => setActiveTab('home')} />
+            </motion.div>
+          )}
+          {activeTab === 'map' && (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.25 }}
+              className="h-full"
+            >
+              <MapPage onBack={() => setActiveTab('itinerary')} />
+            </motion.div>
+          )}
+          {activeTab === 'settings' && (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Settings />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* 登出按鈕（固定右上角，低調） */}
+      {/* 登出按鈕（外殼右上角；以 absolute 對齊外殼，不受卷動影響） */}
       <button
         onClick={logout}
         title="登出"
-        className="fixed top-4 right-4 z-40 w-8 h-8 rounded-full bg-milk-tea-100 flex items-center justify-center text-milk-tea-400 hover:bg-milk-tea-200 hover:text-milk-tea-600 transition-all"
+        className="absolute right-4 z-40 w-8 h-8 rounded-full bg-milk-tea-100 flex items-center justify-center text-milk-tea-400 hover:bg-milk-tea-200 hover:text-milk-tea-600 transition-all"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
       >
         <LogOut className="w-4 h-4" />
       </button>
 
-      {/* Toast System */}
-      <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none">
+      {/* Toast 系統：對齊外殼頂端，避免被卷動帶走 */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none"
+        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 5rem)' }}
+      >
         <AnimatePresence>
           {toasts.map((toast) => (
             <motion.div

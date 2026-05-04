@@ -454,10 +454,13 @@ export const Home: React.FC<HomeProps> = ({ trip, onUpdateTrip, onNavigate }) =>
   };
 
   return (
-    <div className="pb-24 min-h-screen bg-milk-tea-50">
+    <div className="pb-8 bg-milk-tea-50">
 
       {/* Header */}
-      <header className="px-6 pt-10 pb-4 flex justify-between items-center">
+      <header
+        className="px-6 pb-4 flex justify-between items-center"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 2.5rem)' }}
+      >
         <div>
           <h1 className="text-xl font-extrabold tracking-tight text-milk-tea-900">🎀✨Cindy's Paradise☁️💖</h1>
         </div>
