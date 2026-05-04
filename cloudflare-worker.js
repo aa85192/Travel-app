@@ -452,6 +452,34 @@ export default {
       }
     }
 
+    // GET /naver/image?q=... → Naver Image Search 代理（避免 CORS / header 問題）
+    if (path === '/naver/image') {
+      const q = url.searchParams.get('q');
+      if (!q) return json({ error: 'Missing q' }, 400);
+      if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET) {
+        return json({ error: 'NAVER_CLIENT_ID / NAVER_CLIENT_SECRET not configured' }, 503);
+      }
+      try {
+        const naverUrl =
+          `https://openapi.naver.com/v1/search/image.json?` +
+          new URLSearchParams({ query: q, display: '5', sort: 'sim', filter: 'all' });
+        const nRes = await fetch(naverUrl, {
+          headers: {
+            'X-Naver-Client-Id':     env.NAVER_CLIENT_ID,
+            'X-Naver-Client-Secret': env.NAVER_CLIENT_SECRET,
+          },
+        });
+        if (!nRes.ok) {
+          const errText = await nRes.text();
+          return json({ error: `Naver API ${nRes.status}`, detail: errText }, nRes.status);
+        }
+        const data = await nRes.json();
+        return json(data, 200, { 'Cache-Control': 'public, max-age=3600' });
+      } catch (e) {
+        return json({ error: String(e) }, 500);
+      }
+    }
+
     // GET /kakao/search?query=... → Kakao Local Search by keyword
     if (path === '/kakao/search') {
       const query = url.searchParams.get('query');
