@@ -1,9 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { ArrowLeft, Navigation, Car, Clock, Ruler, Banknote, Loader2, AlertCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowLeft, Navigation, Car, Clock, Ruler, Banknote, Loader2, AlertCircle, Search, X, MapPin } from 'lucide-react';
 import { useUIStore } from '../stores/uiStore';
 import { fetchKakaoCarRoute, vertexesToLatLng, KakaoRoute } from '../services/kakaoDirectionsService';
 import { openKakaoMapDirections, openNaverMapDirections } from '../utils/deepLink';
+import { searchPlaces, PlaceResult } from '../services/placeSearchService';
 
 const JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY as string | undefined;
 
@@ -57,6 +58,14 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
   const [sdkError, setSdkError]     = useState(false);
   const [carRoute, setCarRoute]     = useState<KakaoRoute | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+
+  // ── 探索模式搜尋 ────────────────────────────────────────────
+  const [searchQuery, setSearchQuery]     = useState('');
+  const [searchResults, setSearchResults] = useState<PlaceResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen, setSearchOpen]       = useState(false);
+  const searchOverlayRef = useRef<any>(null);
+  const searchDebounce   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const req  = mapRouteRequest;
   const mode = req?.mode ?? 'walking';
@@ -239,6 +248,67 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
   // 離開地圖頁時清掉 preview，避免下次進來還顯示舊的
   useEffect(() => () => setMapPreviewSpot(null), [setMapPreviewSpot]);
 
+  // ── 探索搜尋 ────────────────────────────────────────────────
+  const handleSearchChange = useCallback((q: string) => {
+    setSearchQuery(q);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (!q.trim()) { setSearchResults([]); setSearchOpen(false); return; }
+    searchDebounce.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchPlaces(q);
+        setSearchResults(results);
+        setSearchOpen(results.length > 0);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+  }, []);
+
+  const handleSelectPlace = useCallback((place: PlaceResult) => {
+    setSearchOpen(false);
+    setSearchQuery(place.name);
+
+    const map = kakaoMap.current;
+    if (!map) return;
+
+    const pos = new window.kakao.maps.LatLng(place.lat, place.lng);
+    map.setCenter(pos);
+    map.setLevel(3);
+
+    // 移除舊搜尋結果 overlay
+    if (searchOverlayRef.current) {
+      searchOverlayRef.current.setMap(null);
+    }
+
+    const content = `
+      <div style="
+        display:flex;flex-direction:column;align-items:center;
+        transform:translateY(-100%) translateX(-50%);
+        position:absolute;white-space:nowrap;
+      ">
+        <div style="
+          background:#E8538C;color:#fff;
+          padding:4px 10px;border-radius:12px;
+          font-size:12px;font-weight:bold;
+          box-shadow:0 2px 6px rgba(0,0,0,.25);
+          margin-bottom:4px;max-width:180px;
+          overflow:hidden;text-overflow:ellipsis;
+        ">${place.name}</div>
+        <div style="
+          width:12px;height:12px;border-radius:50%;
+          background:#E8538C;border:2.5px solid #fff;
+          box-shadow:0 2px 4px rgba(0,0,0,.3);
+        "></div>
+      </div>
+    `;
+    const overlay = new window.kakao.maps.CustomOverlay({ position: pos, content, xAnchor: 0, yAnchor: 0 });
+    overlay.setMap(map);
+    searchOverlayRef.current = overlay;
+  }, []);
+
   // ── 無路線請求時：預設顯示釜山地圖 ─────────────────────────
   useEffect(() => {
     if (req || !sdkReady || !mapRef.current || mapPreviewSpot) return;
@@ -255,19 +325,72 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
     return (
       <div className="flex flex-col h-screen bg-white">
         {/* 標題列 */}
-        <div className="flex items-center px-4 py-3 bg-white border-b border-milk-tea-100 z-10 flex-shrink-0">
-          <button onClick={onBack} className="mr-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-milk-tea-100 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-milk-tea-600" />
-          </button>
-          {mapPreviewSpot ? (
-            <div className="flex items-center space-x-2 min-w-0">
-              <span className="text-sm font-bold text-milk-tea-900 truncate">{mapPreviewSpot.name || '景點預覽'}</span>
-              <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100 flex-shrink-0">單點預覽</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-bold text-milk-tea-900">探索釜山</span>
-              <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100">Busan, Korea</span>
+        <div className="bg-white border-b border-milk-tea-100 z-20 flex-shrink-0">
+          <div className="flex items-center px-4 py-3">
+            <button onClick={onBack} className="mr-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-milk-tea-100 transition-colors flex-shrink-0">
+              <ArrowLeft className="w-5 h-5 text-milk-tea-600" />
+            </button>
+            {mapPreviewSpot ? (
+              <div className="flex items-center space-x-2 min-w-0">
+                <span className="text-sm font-bold text-milk-tea-900 truncate">{mapPreviewSpot.name || '景點預覽'}</span>
+                <span className="text-[10px] text-milk-tea-400 bg-milk-tea-50 px-2 py-0.5 rounded-full border border-milk-tea-100 flex-shrink-0">單點預覽</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-bold text-milk-tea-900">探索地圖</span>
+              </div>
+            )}
+          </div>
+
+          {/* 搜尋欄（只在探索模式顯示，非單點預覽） */}
+          {!mapPreviewSpot && (
+            <div className="px-4 pb-3 relative">
+              <div className="flex items-center bg-milk-tea-50 border border-milk-tea-200 rounded-2xl px-3 py-2 gap-2 focus-within:border-milk-tea-400 transition-colors">
+                {searchLoading
+                  ? <Loader2 className="w-4 h-4 text-milk-tea-400 animate-spin flex-shrink-0" />
+                  : <Search className="w-4 h-4 text-milk-tea-400 flex-shrink-0" />
+                }
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+                  placeholder="搜尋景點、餐廳、咖啡廳…"
+                  className="flex-1 bg-transparent text-sm outline-none text-milk-tea-900 placeholder:text-milk-tea-300"
+                />
+                {searchQuery && (
+                  <button onClick={() => { setSearchQuery(''); setSearchResults([]); setSearchOpen(false); }} className="flex-shrink-0">
+                    <X className="w-4 h-4 text-milk-tea-400 hover:text-milk-tea-600" />
+                  </button>
+                )}
+              </div>
+
+              {/* 搜尋結果下拉 */}
+              <AnimatePresence>
+                {searchOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-4 right-4 top-full mt-1 bg-white rounded-2xl shadow-xl border border-milk-tea-100 overflow-hidden z-30"
+                  >
+                    {searchResults.map((place) => (
+                      <button
+                        key={place.id}
+                        onClick={() => handleSelectPlace(place)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-milk-tea-50 transition-colors text-left border-b border-milk-tea-50 last:border-0"
+                      >
+                        <MapPin className="w-4 h-4 text-milk-tea-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-milk-tea-900 truncate">{place.name}</p>
+                          {place.address && <p className="text-[11px] text-milk-tea-400 truncate">{place.address}</p>}
+                        </div>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
@@ -287,7 +410,7 @@ export const MapPage: React.FC<MapPageProps> = ({ onBack }) => {
                 rel="noopener noreferrer"
                 className="px-6 py-2.5 bg-[#FAE100] text-[#3C1E1E] rounded-full font-bold text-sm shadow-sm"
               >
-                在 Kakao Map 探索釜山
+                在 Kakao Map 探索
               </a>
             </div>
           )}

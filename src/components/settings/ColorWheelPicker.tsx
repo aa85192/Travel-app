@@ -14,12 +14,20 @@ const THUMB_D = 30;              // thumb circle diameter
 
 // Hue presets with labels
 export const HUE_PRESETS = [
+  { label: '草莓', hue: 355 },
   { label: '玫粉', hue: 340 },
   { label: '珊瑚', hue: 15  },
+  { label: '橙黃', hue: 28  },
   { label: '金橘', hue: 38  },
+  { label: '蜂蜜', hue: 50  },
+  { label: '抹茶', hue: 88  },
   { label: '薄荷', hue: 162 },
+  { label: '碧湖', hue: 185 },
   { label: '天藍', hue: 200 },
+  { label: '靛藍', hue: 230 },
   { label: '薰衣', hue: 268 },
+  { label: '紫藤', hue: 285 },
+  { label: '丁香', hue: 310 },
 ];
 
 // Convert hue (0-360, 0=red at top, clockwise) → (x, y) relative to center
@@ -157,7 +165,7 @@ export function ColorWheelPicker({ hue, onChange }: Props) {
       </motion.p>
 
       {/* ── Preset swatches ── */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         {HUE_PRESETS.map((p) => {
           const active = Math.abs(hue - p.hue) < 5;
           return (

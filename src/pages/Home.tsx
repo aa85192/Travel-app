@@ -29,7 +29,7 @@ const FLIGHTS = [
     from: { code: 'KHH', name: '高雄國際機場' },
     to:   { code: 'PUS', name: '金海國際機場' },
     departure: '14:15', arrival: '17:55', duration: '2h 40m',
-    date: '2026.05.10',
+    date: '2026.06.05',
     passengers: [
       { name: 'YU-HSIN LIANG', carryOn: '10 kg', checked: '15 kg' },
       { name: 'YU-XIN LO',     carryOn: '10 kg', checked: '15 kg' },
@@ -40,7 +40,7 @@ const FLIGHTS = [
     from: { code: 'PUS', name: '金海國際機場' },
     to:   { code: 'KHH', name: '高雄國際機場' },
     departure: '14:15', arrival: '16:00', duration: '2h 45m',
-    date: '2026.05.13',
+    date: '2026.06.09',
     passengers: [
       { name: 'YU-HSIN LIANG', carryOn: '10 kg', checked: '15 kg' },
       { name: 'YU-XIN LO',     carryOn: '10 kg', checked: '15 kg' },
