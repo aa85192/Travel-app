@@ -79,8 +79,10 @@ export function ColorWheelPicker({ hue, onChange }: Props) {
   const thumbLeft = CENTER + x - THUMB_D / 2;
   const thumbTop  = CENTER + y - THUMB_D / 2;
 
-  const activeColor = `hsl(${hue}, 100%, 65%)`;
-  const darkColor   = `hsl(${hue}, 60%, 36%)`;
+  // Colours match the actual palette curve (tone 500 / tone 700) — what the
+  // wheel previews is exactly what the rest of the app will look like.
+  const activeColor = `oklch(0.66 0.165 ${hue})`;
+  const darkColor   = `oklch(0.44 0.130 ${hue})`;
 
   return (
     <div className="flex flex-col items-center gap-6">
@@ -93,24 +95,18 @@ export function ColorWheelPicker({ hue, onChange }: Props) {
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Outer colour ring */}
+        {/* Outer colour ring — OKLCH so perceived lightness stays uniform */}
         <div style={{
           position: 'absolute', inset: 0, borderRadius: '50%',
           background: [
-            'conic-gradient(',
-            'hsl(0,100%,65%),',
-            'hsl(30,100%,65%),',
-            'hsl(60,100%,65%),',
-            'hsl(90,100%,65%),',
-            'hsl(120,100%,65%),',
-            'hsl(150,100%,65%),',
-            'hsl(180,100%,65%),',
-            'hsl(210,100%,65%),',
-            'hsl(240,100%,65%),',
-            'hsl(270,100%,65%),',
-            'hsl(300,100%,65%),',
-            'hsl(330,100%,65%),',
-            'hsl(360,100%,65%)',
+            'conic-gradient(in oklch longer hue,',
+            'oklch(0.66 0.165 0),',
+            'oklch(0.66 0.165 60),',
+            'oklch(0.66 0.165 120),',
+            'oklch(0.66 0.165 180),',
+            'oklch(0.66 0.165 240),',
+            'oklch(0.66 0.165 300),',
+            'oklch(0.66 0.165 360)',
             ')',
           ].join(''),
           boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
@@ -168,6 +164,7 @@ export function ColorWheelPicker({ hue, onChange }: Props) {
       <div className="flex flex-wrap justify-center gap-3">
         {HUE_PRESETS.map((p) => {
           const active = Math.abs(hue - p.hue) < 5;
+          const swatch = `oklch(0.66 0.165 ${p.hue})`;
           return (
             <button
               key={p.hue}
@@ -178,14 +175,14 @@ export function ColorWheelPicker({ hue, onChange }: Props) {
                 animate={{
                   scale: active ? 1.2 : 1,
                   boxShadow: active
-                    ? `0 0 0 3px hsl(${p.hue},100%,65%)`
+                    ? `0 0 0 3px ${swatch}`
                     : '0 0 0 0px transparent',
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 style={{
                   width: 30, height: 30,
                   borderRadius: '50%',
-                  background: `hsl(${p.hue}, 100%, 65%)`,
+                  background: swatch,
                 }}
               />
               <span className="text-[10px] font-medium" style={{ color: 'var(--color-neutral-gray-3)' }}>

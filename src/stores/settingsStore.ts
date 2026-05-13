@@ -3,36 +3,49 @@ import { persist } from 'zustand/middleware';
 
 export type ThemeMode = 'light' | 'dark' | 'auto';
 
+/**
+ * Tonal palette generator inspired by Material You (HCT) and Apple's Tinted
+ * theme. Uses OKLCH so perceived lightness stays uniform across all hues —
+ * yellow no longer becomes blinding, green no longer becomes muddy, and the
+ * dark text tones keep a consistent contrast ratio against the surfaces.
+ *
+ * Chroma curve:
+ *   • 50–200 surfaces carry only a whisper of hue (0.005–0.025) — backgrounds
+ *     stay near‑neutral regardless of hue, like Apple's systemBackground.
+ *   • 400–600 accents carry full chroma (0.10–0.165) — buttons & highlights
+ *     stay vivid and recognizably "themed".
+ *   • 700–900 text tones taper chroma back down (0.13 → 0.055) so labels read
+ *     as near‑black with a hint of theme tint (≥7:1 contrast on tone 50).
+ */
 export function generateMilkTeaPalette(
   hue: number,
   mode: 'light' | 'dark' = 'light',
 ): Record<string, string> {
   if (mode === 'dark') {
-    // Inverted lightness scale: 50 → darkest bg, 900 → lightest text
     return {
-      '--color-milk-tea-50':  `hsl(${hue}, 22%, 9%)`,
-      '--color-milk-tea-100': `hsl(${hue}, 20%, 15%)`,
-      '--color-milk-tea-200': `hsl(${hue}, 18%, 22%)`,
-      '--color-milk-tea-300': `hsl(${hue}, 18%, 32%)`,
-      '--color-milk-tea-400': `hsl(${hue}, 28%, 55%)`,
-      '--color-milk-tea-500': `hsl(${hue}, 60%, 70%)`,
-      '--color-milk-tea-600': `hsl(${hue}, 70%, 78%)`,
-      '--color-milk-tea-700': `hsl(${hue}, 75%, 85%)`,
-      '--color-milk-tea-800': `hsl(${hue}, 80%, 91%)`,
-      '--color-milk-tea-900': `hsl(${hue}, 90%, 96%)`,
+      '--color-milk-tea-50':  `oklch(0.180 0.012 ${hue})`,
+      '--color-milk-tea-100': `oklch(0.230 0.022 ${hue})`,
+      '--color-milk-tea-200': `oklch(0.300 0.040 ${hue})`,
+      '--color-milk-tea-300': `oklch(0.420 0.065 ${hue})`,
+      '--color-milk-tea-400': `oklch(0.580 0.100 ${hue})`,
+      '--color-milk-tea-500': `oklch(0.720 0.140 ${hue})`,
+      '--color-milk-tea-600': `oklch(0.800 0.130 ${hue})`,
+      '--color-milk-tea-700': `oklch(0.870 0.090 ${hue})`,
+      '--color-milk-tea-800': `oklch(0.930 0.050 ${hue})`,
+      '--color-milk-tea-900': `oklch(0.970 0.020 ${hue})`,
     };
   }
   return {
-    '--color-milk-tea-50':  `hsl(${hue}, 100%, 98%)`,
-    '--color-milk-tea-100': `hsl(${hue}, 97%, 92%)`,
-    '--color-milk-tea-200': `hsl(${hue}, 100%, 87%)`,
-    '--color-milk-tea-300': `hsl(${hue}, 100%, 83%)`,
-    '--color-milk-tea-400': `hsl(${hue}, 100%, 78%)`,
-    '--color-milk-tea-500': `hsl(${hue}, 100%, 71%)`,
-    '--color-milk-tea-600': `hsl(${hue}, 77%, 62%)`,
-    '--color-milk-tea-700': `hsl(${hue}, 54%, 50%)`,
-    '--color-milk-tea-800': `hsl(${hue}, 56%, 39%)`,
-    '--color-milk-tea-900': `hsl(${hue}, 60%, 26%)`,
+    '--color-milk-tea-50':  `oklch(0.985 0.005 ${hue})`,
+    '--color-milk-tea-100': `oklch(0.965 0.013 ${hue})`,
+    '--color-milk-tea-200': `oklch(0.930 0.026 ${hue})`,
+    '--color-milk-tea-300': `oklch(0.870 0.050 ${hue})`,
+    '--color-milk-tea-400': `oklch(0.770 0.100 ${hue})`,
+    '--color-milk-tea-500': `oklch(0.640 0.165 ${hue})`,
+    '--color-milk-tea-600': `oklch(0.540 0.160 ${hue})`,
+    '--color-milk-tea-700': `oklch(0.440 0.130 ${hue})`,
+    '--color-milk-tea-800': `oklch(0.330 0.090 ${hue})`,
+    '--color-milk-tea-900': `oklch(0.220 0.055 ${hue})`,
   };
 }
 

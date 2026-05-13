@@ -17,7 +17,9 @@ export const StoryCard = React.forwardRef<HTMLDivElement, StoryCardProps>(
     const allSpots = trip.days.flatMap((d) => d.spots);
     const featured = allSpots.filter((s) => s.photo).slice(0, 9);
 
-    const bg = `linear-gradient(160deg, hsl(${themeHue}, 100%, 92%) 0%, hsl(${themeHue}, 100%, 87%) 50%, hsl(${(themeHue + 20) % 360}, 100%, 90%) 100%)`;
+    // OKLCH keeps these tones perceptually balanced across every hue —
+    // no neon yellows, no muddy greens, text stays legible on the gradient.
+    const bg = `linear-gradient(160deg, oklch(0.965 0.013 ${themeHue}) 0%, oklch(0.930 0.026 ${themeHue}) 50%, oklch(0.930 0.026 ${(themeHue + 20) % 360}) 100%)`;
 
     return (
       <div
@@ -28,7 +30,7 @@ export const StoryCard = React.forwardRef<HTMLDivElement, StoryCardProps>(
           background: bg,
           padding: 80,
           fontFamily: '"Noto Sans TC", "Nunito", sans-serif',
-          color: `hsl(${themeHue}, 60%, 26%)`,
+          color: `oklch(0.220 0.055 ${themeHue})`,
           display: 'flex',
           flexDirection: 'column',
           gap: 40,
@@ -45,7 +47,7 @@ export const StoryCard = React.forwardRef<HTMLDivElement, StoryCardProps>(
             width: 500,
             height: 500,
             borderRadius: '50%',
-            background: `hsl(${themeHue}, 100%, 78%)`,
+            background: `oklch(0.770 0.100 ${themeHue})`,
             opacity: 0.4,
           }}
         />
@@ -92,7 +94,7 @@ export const StoryCard = React.forwardRef<HTMLDivElement, StoryCardProps>(
                 style={{
                   borderRadius: 28,
                   overflow: 'hidden',
-                  background: `hsl(${themeHue}, 60%, 95%)`,
+                  background: `oklch(0.965 0.013 ${themeHue})`,
                   position: 'relative',
                   boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                 }}
@@ -126,7 +128,7 @@ export const StoryCard = React.forwardRef<HTMLDivElement, StoryCardProps>(
                 key={`ph-${i}`}
                 style={{
                   borderRadius: 28,
-                  background: `hsl(${themeHue}, 80%, 95%)`,
+                  background: `oklch(0.930 0.026 ${themeHue})`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

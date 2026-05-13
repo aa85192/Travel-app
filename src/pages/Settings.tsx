@@ -266,6 +266,76 @@ function DensitySection() {
   );
 }
 
+// ─── Live theme preview ───────────────────────────────────────────────
+// Shows what real UI will look like at the chosen hue, so users can verify
+// readability and overall feel before committing — the same idea as Apple's
+// wallpaper / accent preview in iOS Settings.
+function ThemePreview({ hue }: { hue: number }) {
+  return (
+    <div className="px-5 pb-5">
+      <p className="text-xs font-semibold text-milk-tea-400 mb-3 uppercase tracking-wide">
+        即時預覽
+      </p>
+      <motion.div
+        layout
+        animate={{
+          backgroundColor: `oklch(0.985 0.005 ${hue})`,
+          borderColor:     `oklch(0.930 0.026 ${hue})`,
+        }}
+        transition={{ duration: 0.18 }}
+        className="rounded-2xl border p-4 flex flex-col gap-3"
+      >
+        <div className="flex items-center justify-between">
+          <motion.h3
+            animate={{ color: `oklch(0.220 0.055 ${hue})` }}
+            transition={{ duration: 0.18 }}
+            className="text-base font-bold"
+          >
+            東京小旅行
+          </motion.h3>
+          <motion.span
+            animate={{
+              backgroundColor: `oklch(0.965 0.013 ${hue})`,
+              color:           `oklch(0.440 0.130 ${hue})`,
+            }}
+            transition={{ duration: 0.18 }}
+            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+          >
+            3 天
+          </motion.span>
+        </div>
+        <motion.p
+          animate={{ color: `oklch(0.440 0.130 ${hue})` }}
+          transition={{ duration: 0.18 }}
+          className="text-xs leading-relaxed"
+        >
+          這是一段示範文字。無論主色相為何，內文都應保持清晰可讀。
+        </motion.p>
+        <div className="flex items-center gap-2 pt-1">
+          <motion.button
+            animate={{ backgroundColor: `oklch(0.640 0.165 ${hue})` }}
+            transition={{ duration: 0.18 }}
+            className="flex-1 py-2 rounded-xl text-white text-xs font-bold shadow-sm"
+          >
+            繼續編輯
+          </motion.button>
+          <motion.button
+            animate={{
+              backgroundColor: `oklch(0.965 0.013 ${hue})`,
+              color:           `oklch(0.330 0.090 ${hue})`,
+              borderColor:     `oklch(0.930 0.026 ${hue})`,
+            }}
+            transition={{ duration: 0.18 }}
+            className="flex-1 py-2 rounded-xl text-xs font-bold border"
+          >
+            分享
+          </motion.button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Theme mode (light / dark / auto) ─────────────────────────────────
 const MODE_OPTIONS: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
   { value: 'light', label: '亮色', icon: <Sun className="w-4 h-4" /> },
@@ -336,28 +406,31 @@ export function Settings() {
             <ColorWheelPicker hue={themeHue} onChange={setThemeHue} />
           </div>
 
-          {/* Palette strip preview */}
+          {/* Live preview — real UI elements at the chosen hue */}
+          <ThemePreview hue={themeHue} />
+
+          {/* Tonal palette strip — mirrors the OKLCH curve used app‑wide */}
           <div className="px-5 pb-5">
             <p className="text-xs font-semibold text-milk-tea-400 mb-3 uppercase tracking-wide">
               色階預覽
             </p>
-            <div className="flex gap-1.5 h-7">
+            <div className="flex gap-1 h-7">
               {([
-                [100, 92],
-                [100, 87],
-                [100, 83],
-                [100, 78],
-                [100, 71],
-                [77,  62],
-                [54,  50],
-                [56,  39],
-                [60,  26],
-              ] as [number, number][]).map(([sat, lig], i) => (
+                [0.965, 0.013],
+                [0.930, 0.026],
+                [0.870, 0.050],
+                [0.770, 0.100],
+                [0.640, 0.165],
+                [0.540, 0.160],
+                [0.440, 0.130],
+                [0.330, 0.090],
+                [0.220, 0.055],
+              ] as [number, number][]).map(([l, c], i) => (
                 <motion.div
                   key={i}
-                  animate={{ backgroundColor: `hsl(${themeHue}, ${sat}%, ${lig}%)` }}
+                  animate={{ backgroundColor: `oklch(${l} ${c} ${themeHue})` }}
                   transition={{ duration: 0.18 }}
-                  className="flex-1 rounded-lg"
+                  className="flex-1 rounded-md"
                 />
               ))}
             </div>
