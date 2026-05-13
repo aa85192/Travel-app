@@ -92,6 +92,32 @@ export async function fetchExchangeRates(baseCurrency: string = 'TWD') {
   }
 }
 
+/**
+ * 從 Visa 取得 1 TWD → 1 <toCurr> 的官方匯率。
+ * 走 Cloudflare Worker 代理（Worker 內部會嘗試 Visa，失敗 fallback 市場匯率）。
+ * 回傳 { rate, source }，失敗回 null。
+ */
+export async function fetchVisaRateFor(
+  toCurr: string,
+): Promise<{ rate: number; source: 'visa' | 'market' } | null> {
+  try {
+    const res = await fetch(
+      `${WORKER_URL}?from=TWD&to=${encodeURIComponent(toCurr.toUpperCase())}`,
+      { signal: AbortSignal.timeout(8000) },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const rate = parseFloat(data?.rate);
+    if (!isNaN(rate) && rate > 0) {
+      const source = data?.source === 'visa' ? 'visa' : 'market';
+      return { rate, source };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function convertCurrency(amount: number, fromRate: number, toRate: number) {
   return amount * (toRate / fromRate);
 }

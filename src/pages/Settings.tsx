@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Palette, Coins, LayoutList, Info, ChevronDown, Sun, Moon, Monitor, LogOut } from 'lucide-react';
+import { Palette, Coins, LayoutList, Info, ChevronDown, Sun, Moon, Monitor, LogOut, RefreshCw } from 'lucide-react';
 import { ColorWheelPicker } from '../components/settings/ColorWheelPicker';
 import { logout } from '../components/PasswordGate';
+import { fetchVisaRateFor } from '../services/exchangeRateService';
+import { useUIStore } from '../stores/uiStore';
 import {
   useSettingsStore,
   CURRENCIES,
@@ -50,16 +52,42 @@ function Section({
 function CurrencySection() {
   const { travelCurrency, exchangeRates, setTravelCurrency, setExchangeRate } =
     useSettingsStore();
+  const { addToast } = useUIStore();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [rateInput, setRateInput] = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [rateSource, setRateSource] = useState<'visa' | 'market' | 'manual' | null>(null);
 
   const current = CURRENCIES.find((c) => c.code === travelCurrency)!;
   const rate = exchangeRates[travelCurrency] ?? current.ratePerTWD;
 
   const handleRateBlur = () => {
     const v = parseFloat(rateInput);
-    if (!isNaN(v) && v > 0) setExchangeRate(travelCurrency, v);
+    if (!isNaN(v) && v > 0) {
+      setExchangeRate(travelCurrency, v);
+      setRateSource('manual');
+    }
     setRateInput('');
+  };
+
+  const handleFetchVisa = async () => {
+    if (fetching) return;
+    setFetching(true);
+    const result = await fetchVisaRateFor(travelCurrency);
+    setFetching(false);
+    if (!result) {
+      addToast('匯率取得失敗，請稍後再試', 'error');
+      return;
+    }
+    setExchangeRate(travelCurrency, result.rate);
+    setRateInput('');
+    setRateSource(result.source);
+    addToast(
+      result.source === 'visa'
+        ? `已更新為 Visa 官方匯率`
+        : `Visa 暫時無法取得，已使用市場匯率`,
+      result.source === 'visa' ? 'success' : 'warning',
+    );
   };
 
   return (
@@ -128,9 +156,19 @@ function CurrencySection() {
 
       {/* Exchange rate */}
       <div>
-        <p className="text-xs font-semibold text-milk-tea-400 mb-2 uppercase tracking-wide">
-          匯率設定
-        </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-milk-tea-400 uppercase tracking-wide">
+            匯率設定
+          </p>
+          <button
+            onClick={handleFetchVisa}
+            disabled={fetching}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-milk-tea-500 text-white text-xs font-bold shadow-sm hover:bg-milk-tea-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all active:scale-[0.97]"
+          >
+            <RefreshCw className={`w-3 h-3 ${fetching ? 'animate-spin' : ''}`} />
+            {fetching ? '取得中…' : '從 Visa 取得'}
+          </button>
+        </div>
         <div className="bg-milk-tea-50 rounded-2xl px-4 py-3 border border-milk-tea-100">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-bold text-milk-tea-700">1 NT$</span>
@@ -147,10 +185,23 @@ function CurrencySection() {
               {current.symbol} ({current.code})
             </span>
           </div>
-          <p className="text-[11px] text-milk-tea-300 mt-1.5">
-            1 {current.symbol} ≈{' '}
-            {rate > 0 ? (1 / rate).toFixed(3) : '—'} NT$
-          </p>
+          <div className="flex items-center justify-between mt-1.5">
+            <p className="text-[11px] text-milk-tea-300">
+              1 {current.symbol} ≈{' '}
+              {rate > 0 ? (1 / rate).toFixed(3) : '—'} NT$
+            </p>
+            {rateSource && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                rateSource === 'visa'
+                  ? 'bg-milk-tea-200 text-milk-tea-700'
+                  : rateSource === 'market'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-milk-tea-100 text-milk-tea-500'
+              }`}>
+                {rateSource === 'visa' ? 'Visa 官方' : rateSource === 'market' ? '市場匯率' : '手動輸入'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
