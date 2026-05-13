@@ -1,25 +1,18 @@
 /**
- * Photo lookup service — Naver Image Search only
+ * Photo lookup service — Naver Image Search via Cloudflare Worker proxy
+ *
+ * Credentials live in Worker env (NAVER_CLIENT_ID / NAVER_CLIENT_SECRET);
+ * the frontend just hits /naver/image?q=... and gets the raw Naver response.
  */
 
-// ── Naver Image Search ───────────────────────────────────────────────────────
-
-const NAVER_CLIENT_ID     = (import.meta.env.VITE_NAVER_CLIENT_ID     as string | undefined) ?? '';
-const NAVER_CLIENT_SECRET = (import.meta.env.VITE_NAVER_CLIENT_SECRET as string | undefined) ?? '';
+const WORKER_URL = 'https://visa-rate.aa85192.workers.dev';
 
 async function fetchNaverPhoto(query: string): Promise<string | null> {
-  if (!NAVER_CLIENT_ID || !NAVER_CLIENT_SECRET) return null;
   try {
-    const apiUrl = `https://openapi.naver.com/v1/search/image.json?` +
-      new URLSearchParams({ query, display: '5', sort: 'sim', filter: 'all' });
-    const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(apiUrl)}`;
-    const res = await fetch(proxyUrl, {
-      headers: {
-        'X-Naver-Client-Id':     NAVER_CLIENT_ID,
-        'X-Naver-Client-Secret': NAVER_CLIENT_SECRET,
-      },
-      signal: AbortSignal.timeout(6000),
-    });
+    const res = await fetch(
+      `${WORKER_URL}/naver/image?q=${encodeURIComponent(query)}`,
+      { signal: AbortSignal.timeout(8000) },
+    );
     if (!res.ok) return null;
     const data = await res.json();
     for (const item of (data?.items ?? [])) {
@@ -31,8 +24,6 @@ async function fetchNaverPhoto(query: string): Promise<string | null> {
     return null;
   }
 }
-
-// ── Public API ───────────────────────────────────────────────────────────────
 
 export async function fetchWikipediaPhoto(
   query: string,
