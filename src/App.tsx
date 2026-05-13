@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LogOut } from 'lucide-react';
 import { Home } from './pages/Home';
 import { TripOverview } from './pages/TripOverview';
 import { Budget } from './pages/Budget';
@@ -8,7 +7,7 @@ import { MapPage } from './pages/MapPage';
 import { Settings } from './pages/Settings';
 import { TodoList } from './pages/TodoList';
 import { BottomNav } from './components/layout/BottomNav';
-import { PasswordGate, isAuthenticated, logout } from './components/PasswordGate';
+import { PasswordGate, isAuthenticated } from './components/PasswordGate';
 import { useTripStore } from './stores/tripStore';
 import { useUIStore } from './stores/uiStore';
 import { useSettingsStore, applyTheme } from './stores/settingsStore';
@@ -122,16 +121,6 @@ export default function App() {
       </main>
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
-
-      {/* 登出按鈕（外殼右上角；以 absolute 對齊外殼，不受卷動影響） */}
-      <button
-        onClick={logout}
-        title="登出"
-        className="absolute right-4 z-40 w-8 h-8 rounded-full bg-milk-tea-100 flex items-center justify-center text-milk-tea-400 hover:bg-milk-tea-200 hover:text-milk-tea-600 transition-all"
-        style={{ top: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
-      >
-        <LogOut className="w-4 h-4" />
-      </button>
 
       {/* Toast 系統：對齊外殼頂端，避免被卷動帶走 */}
       <div

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Palette, Coins, LayoutList, Info, ChevronDown, Sun, Moon, Monitor } from 'lucide-react';
+import { Palette, Coins, LayoutList, Info, ChevronDown, Sun, Moon, Monitor, LogOut } from 'lucide-react';
 import { ColorWheelPicker } from '../components/settings/ColorWheelPicker';
+import { logout } from '../components/PasswordGate';
 import {
   useSettingsStore,
   CURRENCIES,
@@ -345,6 +346,24 @@ export function Settings() {
             <Row label="版本" value="1.0.0" />
             <Row label="主題色相" value={`${themeHue}°`} />
             <Row label="旅遊貨幣" value={`${current.flag} ${current.code}`} />
+          </div>
+        </Section>
+
+        {/* ── 帳號 ─────────────────────────────────────── */}
+        <Section
+          icon={<LogOut className="w-4 h-4 text-milk-tea-600" />}
+          title="帳號"
+          subtitle="登出目前的帳號"
+          delay={0.24}
+        >
+          <div className="px-5 py-4">
+            <button
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-milk-tea-100 text-milk-tea-700 font-bold text-sm hover:bg-milk-tea-200 transition-all active:scale-[0.98]"
+            >
+              <LogOut className="w-4 h-4" />
+              登出
+            </button>
           </div>
         </Section>
 
